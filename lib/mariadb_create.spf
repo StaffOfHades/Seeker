@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>ContentFilters</key>
+	<dict/>
+	<key>auto_connect</key>
+	<true/>
+	<key>data</key>
+	<dict>
+		<key>connection</key>
+		<dict>
+			<key>database</key>
+			<string>information_retrieval</string>
+			<key>host</key>
+			<string>localhost</string>
+			<key>name</key>
+			<string>localhost</string>
+			<key>rdbms_type</key>
+			<string>mysql</string>
+			<key>sslCACertFileLocation</key>
+			<string></string>
+			<key>sslCACertFileLocationEnabled</key>
+			<integer>0</integer>
+			<key>sslCertificateFileLocation</key>
+			<string></string>
+			<key>sslCertificateFileLocationEnabled</key>
+			<integer>0</integer>
+			<key>sslKeyFileLocation</key>
+			<string></string>
+			<key>sslKeyFileLocationEnabled</key>
+			<integer>0</integer>
+			<key>type</key>
+			<string>SPSocketConnection</string>
+			<key>useSSL</key>
+			<integer>0</integer>
+			<key>user</key>
+			<string>root</string>
+		</dict>
+		<key>session</key>
+		<dict>
+			<key>connectionEncoding</key>
+			<string>utf8</string>
+			<key>contentPageNumber</key>
+			<integer>1</integer>
+			<key>contentSelection</key>
+			<data>
+			YnBsaXN0MDDUAQIDBAUGOjtYJHZlcnNpb25YJG9iamVjdHNZJGFy
+			Y2hpdmVyVCR0b3ASAAGGoK4HCBUWFxgZHSQpLTE0OFUkbnVsbNMJ
+			CgsMEBRXTlMua2V5c1pOUy5vYmplY3RzViRjbGFzc6MNDg+AAoAD
+			gASjERITgAWABoAIgA1UdHlwZVRyb3dzVGtleXNfECZTZWxlY3Rp
+			b25EZXRhaWxUeXBlUHJpbWFyeUtleWVkRGV0YWlsc9MJCgsaGxyg
+			oIAH0h4fICFaJGNsYXNzbmFtZVgkY2xhc3Nlc18QE05TTXV0YWJs
+			ZURpY3Rpb25hcnmjICIjXE5TRGljdGlvbmFyeVhOU09iamVjdNIK
+			CyUooiYngAmAC4AM0gsqKyxZTlMuc3RyaW5ngApVaWRkb2PSHh8u
+			L18QD05TTXV0YWJsZVN0cmluZ6MuMCNYTlNTdHJpbmfSCyorM4AK
+			VHRlcm3SHh81Nl5OU011dGFibGVBcnJheaM1NyNXTlNBcnJhedIe
+			HyI5oiIjXxAPTlNLZXllZEFyY2hpdmVy0Tw9VGRhdGGAAQAIABEA
+			GgAjAC0AMgA3AEYATABTAFsAZgBtAHEAcwB1AHcAewB9AH8AgQCD
+			AIgAjQCSALsAwgDDAMQAxgDLANYA3wD1APkBBgEPARQBFwEZARsB
+			HQEiASwBLgE0ATkBSwFPAVgBXQFfAWQBaQF4AXwBhAGJAYwBngGh
+			AaYAAAAAAAACAQAAAAAAAAA+AAAAAAAAAAAAAAAAAAABqA==
+			</data>
+			<key>contentSortColIsAsc</key>
+			<true/>
+			<key>contentViewport</key>
+			<string>{{0, 0}, {694, 450}}</string>
+			<key>isToolbarVisible</key>
+			<true/>
+			<key>queries</key>
+			<string>/* Calculate IDF */
+select log10(df) from(select sum(todos) as df
+	from(select count(*) as todos
+		from relation
+		group by term
+		having term = (select term
+			from terms)
+	) as calc1) as calc2;
+
+/* TF for specific document */
+select tf 
+from relation
+where iddoc = 1 and term = (select term
+	from terms
+	where term = "zone");
+
+/* IDF */
+select idf
+from terms
+where term = "zone";
+
+/* DF */
+select sum(todos) as df
+from(select count(*) as todos
+	from relation
+	group by term
+	having term = (select term
+		from terms
+		where term = "zone")
+) as todos;
+
+/* Similitud */
+select r.iddoc,
+	sum(q.tf * t.idf * r.tf * t.idf) as similitud
+	from queries q, relation r, terms t
+	where q.term = t.term and t.term = r.term
+	group by r.iddoc
+	order by 2 desc;
+
+insert into terms (term)  values("heavy");
+insert into documents (text) values("europe is a heavy water zone");
+insert into relation (iddoc, term, tf) values(1, "water", 1), (1, "europe", 1), (1, "zone", 1), (1, "heavy", 1);
+insert into queries (term, tf) values ("water", 2);
+select * from terms;
+select * from documents;
+select * from relation;</string>
+			<key>table</key>
+			<string>relation</string>
+			<key>view</key>
+			<string>SP_VIEW_CUSTOMQUERY</string>
+			<key>windowVerticalDividerPosition</key>
+			<real>200</real>
+		</dict>
+	</dict>
+	<key>encrypted</key>
+	<false/>
+	<key>format</key>
+	<string>connection</string>
+	<key>queryFavorites</key>
+	<array/>
+	<key>queryHistory</key>
+	<array>
+		<string>/* Similitud */
+select r.iddoc,
+	sum(q.tf * t.idf * r.tf * t.idf) as similitud
+	from queries q, relation r, terms t
+	where q.term = t.term and t.term = r.term
+	group by r.iddoc
+	order by 2 desc</string>
+		<string>insert into queries (term, tf) values ("water", 2)</string>
+		<string>insert into queries (term, tf) values ("water", 2)
+select * from terms</string>
+		<string>/* DF */
+select sum(todos) as df
+from(select count(*) as todos
+	from relation
+	group by term
+	having term = (select term
+		from terms
+		where term = "zone")
+) as todos</string>
+		<string>/* IDF */
+select idf
+from terms
+where term = "zone"</string>
+		<string>/* TF for specific document */
+select tf 
+from relation
+where iddoc = 1 and term = (select term
+	from terms
+	where term = "zone")</string>
+		<string>/* TF for specific document */
+select df 
+from relation
+where iddoc = 1 and term = (select term
+	from terms
+	where term = "zone")</string>
+		<string>/* TF for specific document */
+select df 
+from relation
+where iddoc = 248 and term = (select term
+	from terms
+	where term = "zone")</string>
+		<string>/* Calculate IDF */
+select log10(df) from(select sum(todos) as df
+	from(select count(*) as todos
+		from relation
+		group by term
+		having term = (select term
+			from terms)
+	) as calc1) as calc2</string>
+		<string>select * from relation</string>
+		<string>select * from documents</string>
+		<string>select * from terms</string>
+		<string>insert into relation (iddoc, term, tf) values(1, "water", 1), (1, "europe", 1), (1, "zone", 1), (1, "heavy", 1)</string>
+		<string>insert into relation (iddoc, term, tf) values(1, "water", 1), (1, "europe", 1), (1, "zone", 1), (1, "heavy", 1)
+select * from terms</string>
+		<string>insert into terms (term)  values("heavy")</string>
+		<string>insert into documents (text) values("europe is a heavy water zone")</string>
+		<string>insert into documents (text) values("europe is a heave water zone")</string>
+		<string>insert into documents values("europe is a heave water zone")</string>
+		<string>insert into terms values("zone", default)</string>
+		<string>delete from terms where term = "zone"</string>
+	</array>
+	<key>rdbms_type</key>
+	<string>mysql</string>
+	<key>rdbms_version</key>
+	<string>5.5.5-10.2.8-MariaDB</string>
+	<key>version</key>
+	<integer>1</integer>
+</dict>
+</plist>

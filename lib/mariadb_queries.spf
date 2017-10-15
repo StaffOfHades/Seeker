@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>ContentFilters</key>
+	<dict/>
+	<key>auto_connect</key>
+	<true/>
+	<key>data</key>
+	<dict>
+		<key>connection</key>
+		<dict>
+			<key>database</key>
+			<string>information_retrieval</string>
+			<key>host</key>
+			<string>localhost</string>
+			<key>name</key>
+			<string>localhost</string>
+			<key>rdbms_type</key>
+			<string>mysql</string>
+			<key>sslCACertFileLocation</key>
+			<string></string>
+			<key>sslCACertFileLocationEnabled</key>
+			<integer>0</integer>
+			<key>sslCertificateFileLocation</key>
+			<string></string>
+			<key>sslCertificateFileLocationEnabled</key>
+			<integer>0</integer>
+			<key>sslKeyFileLocation</key>
+			<string></string>
+			<key>sslKeyFileLocationEnabled</key>
+			<integer>0</integer>
+			<key>type</key>
+			<string>SPSocketConnection</string>
+			<key>useSSL</key>
+			<integer>0</integer>
+			<key>user</key>
+			<string>root</string>
+		</dict>
+		<key>session</key>
+		<dict>
+			<key>connectionEncoding</key>
+			<string>utf8</string>
+			<key>contentPageNumber</key>
+			<integer>1</integer>
+			<key>contentSelection</key>
+			<data>
+			YnBsaXN0MDDUAQIDBAUGNjdYJHZlcnNpb25YJG9iamVjdHNZJGFy
+			Y2hpdmVyVCR0b3ASAAGGoK0HCBUWFxgZHSQoLDA0VSRudWxs0wkK
+			CwwQFFdOUy5rZXlzWk5TLm9iamVjdHNWJGNsYXNzow0OD4ACgAOA
+			BKMREhOABYAGgAiADFR0eXBlVHJvd3NUa2V5c18QJlNlbGVjdGlv
+			bkRldGFpbFR5cGVQcmltYXJ5S2V5ZWREZXRhaWxz0wkKCxobHKCg
+			gAfSHh8gIVokY2xhc3NuYW1lWCRjbGFzc2VzXxATTlNNdXRhYmxl
+			RGljdGlvbmFyeaMgIiNcTlNEaWN0aW9uYXJ5WE5TT2JqZWN00goL
+			JSehJoAJgAvSCykqK1lOUy5zdHJpbmeAClR0ZXJt0h4fLS5fEA9O
+			U011dGFibGVTdHJpbmejLS8jWE5TU3RyaW5n0h4fMTJeTlNNdXRh
+			YmxlQXJyYXmjMTMjV05TQXJyYXnSHh8iNaIiI18QD05TS2V5ZWRB
+			cmNoaXZlctE4OVRkYXRhgAEACAARABoAIwAtADIANwBFAEsAUgBa
+			AGUAbABwAHIAdAB2AHoAfAB+AIAAggCHAIwAkQC6AMEAwgDDAMUA
+			ygDVAN4A9AD4AQUBDgETARUBFwEZAR4BKAEqAS8BNAFGAUoBUwFY
+			AWcBawFzAXgBewGNAZABlQAAAAAAAAIBAAAAAAAAADoAAAAAAAAA
+			AAAAAAAAAAGX
+			</data>
+			<key>contentSortColIsAsc</key>
+			<true/>
+			<key>contentViewport</key>
+			<string>{{0, 0}, {694, 450}}</string>
+			<key>isToolbarVisible</key>
+			<true/>
+			<key>queries</key>
+			<string>/* TF for specific document */
+select df 
+from relation
+where iddoc = 248 and idterm = (select `idterms`
+	from terms
+	where term = "zone");
+
+/* IDF */
+select idf
+from terms_command_teacher
+where term_command_teacher = "zone";
+
+/* DF */
+select sum(todos) as df
+from(select count(*) as todos
+	from relation
+	group by idterm
+	having idterm = (select idterms
+		from terms
+		where term = "zone")
+) as todos;
+
+/* Similitud */
+select i.iddoc,
+	sum(q.tf * t.idf * i.tf * t.idf) as similitud
+	from `query` q, invertedindex i, terms_good t
+	where q.term = "zone" and q.term = t.term and t.term = i.term
+	group by i.IdDoc
+	order by 2 desc;
+	
+/* Precision (Old)*/
+select i.iddoc,
+	q.tf as q_tf, t.idf as t_idf, i.tf as i_tf
+	from `query` q, invertedindex i, terms_good t
+	where t.term = "memories" and t.term = q.term and t.term = i.term
+	group by i.IdDoc;
+
+select i.iddoc,
+	q.tf as q_tf, t.idf as t_idf, i.tf as i_tf
+	from `query` q, invertedindex i, terms_good t
+	where t.term = "memories" and t.term = i.term
+	group by i.IdDoc;
+	
+select i.iddoc,
+	sum(q.tf * t.idf * i.tf * t.idf) as similitud
+	from `query` q, invertedindex i, terms_good t
+	where t.term = "memories" and t.term = i.term
+	group by i.IdDoc
+	order by 2 desc;
+
+select * from `query` where term = "";
+select * from invertedindex where term = "zone" order by 3 desc;
+select * from terms_good where term = "memories";
+select * from `query`;</string>
+			<key>table</key>
+			<string>query</string>
+			<key>view</key>
+			<string>SP_VIEW_CUSTOMQUERY</string>
+			<key>windowVerticalDividerPosition</key>
+			<real>200</real>
+		</dict>
+	</dict>
+	<key>encrypted</key>
+	<false/>
+	<key>format</key>
+	<string>connection</string>
+	<key>queryFavorites</key>
+	<array/>
+	<key>queryHistory</key>
+	<array>
+		<string>/* DF */
+select sum(todos) as df
+from(select count(*) as todos
+	from relation
+	group by idterm
+	having idterm = (select idterms
+		from terms
+		where term = "zone")
+) as todos</string>
+		<string>select count(*) as todos
+	from relation
+	group by idterm
+	having idterm = (select idterms
+		from terms
+		where term = "zone")</string>
+		<string>select i.iddoc,
+	sum(q.tf * t.idf * i.tf * t.idf) as similitud
+	from `query` q, invertedindex i, terms_good t
+	where t.term = "memories" and t.term = i.term
+	group by i.IdDoc
+	order by 2 desc</string>
+		<string>/* Similitud */
+select i.iddoc,
+	sum(q.tf * t.idf * i.tf * t.idf) as similitud
+	from `query` q, invertedindex i, terms_good t
+	where q.term = "zone" and q.term = t.term and t.term = i.term
+	group by i.IdDoc
+	order by 2 desc</string>
+		<string>/* IDF */
+select idf
+from terms_command_teacher
+where term_command_teacher = "zone"</string>
+		<string>/* TF for specific document */
+select df 
+from relation
+where iddoc = 248 and idterm = (select `idterms`
+	from terms
+	where term = "zone")</string>
+		<string>select * from `query`</string>
+		<string>select * from `query` where term = ""</string>
+		<string>select i.iddoc,
+	q.tf as q_tf, t.idf as t_idf, i.tf as i_tf
+	from `query` q, invertedindex i, terms_good t
+	where t.term = "memories" and t.term = i.term
+	group by i.IdDoc</string>
+		<string>/* Precision (Old)*/
+select i.iddoc,
+	q.tf as q_tf, t.idf as t_idf, i.tf as i_tf
+	from `query` q, invertedindex i, terms_good t
+	where t.term = "memories" and t.term = q.term and t.term = i.term
+	group by i.IdDoc</string>
+		<string>select count(*) from `query`</string>
+		<string>/* Precision (Old)*/
+select i.iddoc,
+	q.tf as q_tf, t.idf as t_idf, i.tf as i_tf
+	from `query` q, invertedindex i, terms_good t
+	where t.term = "memories" and t.term = i.term
+	group by i.IdDoc</string>
+		<string>select i.iddoc,
+	sum(q.tf * t.idf * i.tf * t.idf) as similitud
+	from `query` q, invertedindex i, terms_good t
+	where t.term = "zone" and t.term = i.term
+	group by i.IdDoc
+	order by 2 desc</string>
+		<string>select * from invertedindex where term = "zone" order by 3 desc</string>
+		<string>/* Similitud */
+select i.iddoc,
+	sum(q.tf * t.idf * i.tf * t.idf) as similitud
+	from `query` q, invertedindex i, terms_good t
+	where q.term = "memories" and q.term = t.term and t.term = i.term
+	group by i.IdDoc
+	order by 2 desc</string>
+		<string>select * from invertedindex where term = "zone" order by 3</string>
+		<string>select * from invertedindex where term = "zone"</string>
+		<string>select * from terms_good where term = "zone"</string>
+		<string>/* Precision (Old)*/
+select i.iddoc,
+	q.tf as q_tf, t.idf as t_idf, i.tf as i_tf
+	from `query` q, invertedindex i, terms_good t
+	where t.term = "memories" t.term = q.term and t.term = i.term
+	group by i.IdDoc</string>
+		<string>/* Precision (Old)*/
+select i.iddoc,
+	q.tf as q_tf, t.idf as t_idf, i.tf as i_tf as similitud
+	from `query` q, invertedindex i, terms_good t
+	where t.term = "memories" and t.term = i.term
+	group by i.IdDoc</string>
+	</array>
+	<key>rdbms_type</key>
+	<string>mysql</string>
+	<key>rdbms_version</key>
+	<string>5.5.5-10.2.8-MariaDB</string>
+	<key>version</key>
+	<integer>1</integer>
+</dict>
+</plist>

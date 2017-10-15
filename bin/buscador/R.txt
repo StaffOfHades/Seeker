@@ -1,0 +1,40 @@
+
+RenjinScriptEngineFactory factory = new RenjinScriptEngineFactory();
+ScriptEngine engine = factory.getScriptEngine();
+engine.put( "x", new DoubleArrayVector( recall ) );
+engine.put( "y", new DoubleArrayVector( precision ) );
+engine.put( "n", recall.size() );
+engine.eval("xrange <- c(1:n)");
+engine.eval("yrange <- seq(0, 1.0, 0.01)");
+engine.eval("par(pch=22, col=\"blue\")");
+engine.eval(
+  "plot(xrange, yrange, type=\"n\", " +
+  "xlab=\"Percent (%)\", ylab=\"Documents (#)\")"
+);
+engine.eval("colors <- rainbow(2)");
+engine.eval("plotchar <- seq(1,n,10)");
+engine.eval("linetype <- c(1:2)");
+engine.eval(
+  "lines(c(1:n), x, type=\"b\", " +
+  "lwd=1.5, lty=linetype[0], col=colors[0], pch=plotchar[0])"
+);
+engine.eval(
+  "lines(c(1:n), y, type=\"b\", " +
+  "lwd=1.5, lty=linetype[1], col=colors[1], pch=plotchar[1])"
+);
+engine.eval("title(\"Precision vs Recall\", \"A\")");
+/*
+engine.eval(
+  "legend(xrange[1], yrange[2], 1:2, cex=0.8, col=colors, " +
+  "pch=plotchar, lty=linetype, title=\"Recall & Precision\")"
+);
+engine.eval("pdf(\"/Users/mauriciog/Downloads/Recuperacion de la Información/Buscador/Graph1\")");
+
+catch (EvalException e) {
+  final Vector condition = (Vector) e.getCondition();
+
+  // the first element of the string contains the actual error message:
+  final String msg = condition.getElementAsString(0);
+  System.err.println("The R script threw error: " + msg);
+  e.printStackTrace();
+}
