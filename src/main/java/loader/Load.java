@@ -1,16 +1,15 @@
 package loader;
 
+import seeker.Constants;
+
 import java.io.File;
 import java.io.FileReader;
-import java.io.IOException;
 import java.io.LineNumberReader;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -22,75 +21,62 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-public class Load {
+public class Load implements Constants {
   
-  private final static String DRIVER = "org.mariadb.jdbc.Driver";
-  private final static String DB =
-     "jdbc:mariadb://localhost:3306/information_retrieval?user=root";
-  private final static String PATH =
-    "/Users/mauriciog/Downloads/Recuperacion de la Información/Buscador/src/main/java/loader/";
   private final static String TERMS =
-    PATH + "term-vocab.txt";
+    PATH + "loader/term-vocab.txt";
   private final static String DOCUMENTS =
-    PATH + "doc-text.txt";
+    PATH + "loader/doc-text.txt";
   private final static String QUERIES =
-    PATH + "query-text.txt";
+    PATH + "loader/query-text.txt";
   private final static String CONTAINS =
-    PATH + "doc-vecs.txt";
+    PATH + "loader/doc-vecs.txt";
   private final static String MADE =
-    PATH + "queries-vec.txt";
+    PATH + "loader/queries-vec.txt";
   private final static String RELEVANT =
-    PATH + "rlv-ass.txt";
+    PATH + "loader/rlv-ass.txt";
 
-  public void checkConnection() {
-    Connection connection;
-
+  public Load() {
     try {
       // Enable driver,
       Class.forName( DRIVER ).newInstance();
-      
+    } catch ( Exception e ) {
+      e.printStackTrace();
+    }
+  }
+  
+
+  public void checkConnection() {
+
+    try {
       // Open connection,
-      connection = DriverManager.getConnection( DB );
+      Connection connection = DriverManager.getConnection( DB );
 
       // Check if succesful.
-      if( connection != null )
-        System.out.println( "SUCCESS: Connected to DB" );
-      else
+      if( connection == null )
         return;
 
-      final String sqlQuery = "select * from documents;";
-      final PreparedStatement statement = connection.prepareStatement( sqlQuery );
-      statement.execute();
-      statement.close();
-      
-    } catch(SQLException e) {
-      e.printStackTrace();
-    } catch(ClassNotFoundException e) {
-      e.printStackTrace();
-    } catch(InstantiationException e) {
-      e.printStackTrace();
-    } catch(IllegalAccessException e) {
+      System.out.println( SUCCESS );
+
+      connection.close();
+    } catch( Exception e ) {
       e.printStackTrace();
     }
   }
 
   public void cleanDB() {
-    Connection connection;
+   
 
     try {
-      // Enable driver,
-      Class.forName( DRIVER ).newInstance();
-      
       // Open connection,
-      connection = DriverManager.getConnection( DB );
+      Connection connection = DriverManager.getConnection( DB );
 
       // Check if succesful.
-      if( connection != null ) {
-
-        System.out.println( "SUCCESS: Connected to DB" );
-        System.out.println( "Cleaning Data in DB" );
-      } else
+      if( connection == null )
         return;
+        
+      System.out.println( SUCCESS );
+      System.out.println( DIVIDER + "Cleaning Data in DB" + DIVIDER );
 
       final String[] queries = new String[6];
       queries[0] = "delete from `relevant`;";
@@ -104,15 +90,9 @@ public class Load {
 
         final PreparedStatement statement = connection.prepareStatement( sqlQuery );
         statement.execute();
-        statement.close();
       }
-    } catch(SQLException e) {
-      e.printStackTrace();
-    } catch(ClassNotFoundException e) {
-      e.printStackTrace();
-    } catch(InstantiationException e) {
-      e.printStackTrace();
-    } catch(IllegalAccessException e) {
+      connection.close();
+    } catch( Exception e ) {
       e.printStackTrace();
     }
   }
@@ -129,19 +109,15 @@ public class Load {
 
     try {
 
-      // Enable driver,
-      Class.forName( DRIVER ).newInstance();
-      
       // Open connection,
       connection = DriverManager.getConnection( DB );
 
       // Check if succesful.
-      if( connection != null ) {
-
-        System.out.println( "SUCCESS: Connected to DB" );
-        System.out.println( "Adding Documents to DB" );
-      } else
+      if( connection == null )
         return;
+
+      System.out.println( SUCCESS );
+      System.out.println( DIVIDER + "Adding Documents to DB" + DIVIDER );
 
       file = new File( DOCUMENTS );
       input = new FileReader( file );
@@ -187,7 +163,7 @@ public class Load {
           );
           statement.execute();
           statement.close();
-        } catch(SQLException e) {
+        } catch( Exception e ) {
           e.printStackTrace();
         }
 
@@ -204,16 +180,8 @@ public class Load {
 
       reader.close();
       input.close();
-      
-    } catch(IOException e) {
-      e.printStackTrace();
-    } catch(SQLException e) {
-      e.printStackTrace();
-    } catch(ClassNotFoundException e) {
-      e.printStackTrace();
-    } catch(InstantiationException e) {
-      e.printStackTrace();
-    } catch(IllegalAccessException e) {
+      connection.close();
+    } catch( Exception e ) {
       e.printStackTrace();
     }
   }
@@ -227,19 +195,20 @@ public class Load {
     Connection connection;
 
     try {
-      // Enable driver,
-      Class.forName( DRIVER ).newInstance();
       
       // Open connection,
       connection = DriverManager.getConnection( DB );
 
       // Check if succesful.
-      if( connection != null ) {
-
-        System.out.println( "SUCCESS: Connected to DB" );
-        System.out.println( "Adding default queries to DB" );
-      } else
+      if( connection == null )
         return;
+
+      System.out.println( SUCCESS );
+      System.out.println(
+        DIVIDER +
+        "Adding default queries to DB" +
+        DIVIDER
+      );
 
       file = new File( QUERIES );
       input = new FileReader( file );
@@ -282,16 +251,8 @@ public class Load {
       stream.close();
       reader.close();
       input.close();
-      
-    } catch(IOException e) {
-      e.printStackTrace();
-    } catch(SQLException e) {
-        e.printStackTrace();
-    } catch(ClassNotFoundException e) {
-      e.printStackTrace();
-    } catch(InstantiationException e) {
-      e.printStackTrace();
-    } catch(IllegalAccessException e) {
+      connection.close();
+    } catch( Exception e ) {
       e.printStackTrace();
     }
   }
@@ -346,7 +307,7 @@ public class Load {
           );
           statement.execute();
           statement.close();
-        } catch(SQLException e) {
+        } catch( Exception e ) {
           e.printStackTrace();
         }
       }
@@ -362,19 +323,16 @@ public class Load {
     Connection connection;
 
     try {
-      // Enable driver,
-      Class.forName( DRIVER ).newInstance();
       
       // Open connection,
       connection = DriverManager.getConnection( DB );
 
       // Check if succesful.
-      if( connection != null ) {
-
-        System.out.println( "SUCCESS: Connected to DB" );
-        System.out.println( "Adding Terms to DB" );
-      } else
+      if( connection == null )
         return;
+
+      System.out.println( SUCCESS );
+      System.out.println( DIVIDER + "Adding Terms to DB" + DIVIDER );
 
       file = new File( TERMS );
       input = new FileReader( file );
@@ -398,7 +356,7 @@ public class Load {
             );
             statement.execute();
             statement.close();
-          } catch(SQLException e) {
+          } catch( Exception e ) {
             e.printStackTrace();
           }
         }
@@ -406,16 +364,9 @@ public class Load {
       stream.close();
       reader.close();
       input.close();
+      connection.close();
       
-    } catch(IOException e) {
-      e.printStackTrace();
-    } catch(SQLException e) {
-        e.printStackTrace();
-    } catch(ClassNotFoundException e) {
-      e.printStackTrace();
-    } catch(InstantiationException e) {
-      e.printStackTrace();
-    } catch(IllegalAccessException e) {
+    } catch( Exception e ) {
       e.printStackTrace();
     }
   }
@@ -431,19 +382,20 @@ public class Load {
     int j;
 
     try {
-      // Enable driver,
-      Class.forName( DRIVER ).newInstance();
       
       // Open connection,
       connection = DriverManager.getConnection( DB );
 
       // Check if succesful.
-      if( connection != null ) {
-
-        System.out.println( "SUCCESS: Connected to DB" );
-        System.out.println( "Adding relation between terms and documents" );
-      } else
+      if( connection == null )
         return;
+
+      System.out.println( SUCCESS );
+      System.out.println(
+        DIVIDER +
+        "Adding relation between terms and documents" +
+        DIVIDER
+      );
 
       file = new File( CONTAINS );
       input = new FileReader( file );
@@ -490,16 +442,8 @@ public class Load {
 
       reader.close();
       input.close();
-      
-    } catch(IOException e) {
-      e.printStackTrace();
-    } catch(SQLException e) {
-      e.printStackTrace();
-    } catch(ClassNotFoundException e) {
-      e.printStackTrace();
-    } catch(InstantiationException e) {
-      e.printStackTrace();
-    } catch(IllegalAccessException e) {
+      connection.close();
+    } catch( Exception e) {
       e.printStackTrace();
     }
   }
@@ -514,19 +458,20 @@ public class Load {
     String string;
 
     try {
-      // Enable driver,
-      Class.forName( DRIVER ).newInstance();
       
       // Open connection,
       connection = DriverManager.getConnection( DB );
 
       // Check if succesful.
-      if( connection != null ) {
-
-        System.out.println( "SUCCESS: Connected to DB" );
-        System.out.println( "Adding relation between documents and queries" );
-      } else
+      if( connection == null )
         return;
+
+      System.out.println( SUCCESS );
+      System.out.println( 
+        DIVIDER +
+        "Adding relation between documents and queries" +
+        DIVIDER
+      );
 
       file = new File( RELEVANT );
       input = new FileReader( file );
@@ -567,7 +512,7 @@ public class Load {
             );
             statement.execute();
             statement.close();
-          } catch(SQLException e) {
+          } catch( Exception e ) {
             e.printStackTrace();
           }
         }
@@ -575,16 +520,8 @@ public class Load {
 
       reader.close();
       input.close();
-      
-    } catch(IOException e) {
-      e.printStackTrace();
-    } catch(SQLException e) {
-      e.printStackTrace();
-    } catch(ClassNotFoundException e) {
-      e.printStackTrace();
-    } catch(InstantiationException e) {
-      e.printStackTrace();
-    } catch(IllegalAccessException e) {
+      connection.close();
+    } catch( Exception e ) {
       e.printStackTrace();
     }
   }
@@ -594,19 +531,16 @@ public class Load {
     Connection connection;
 
     try {
-      // Enable driver,
-      Class.forName( DRIVER ).newInstance();
-      
+    
       // Open connection,
       connection = DriverManager.getConnection( DB );
 
       // Check if succesful.
-      if( connection != null ) {
-
-        System.out.println( "SUCCESS: Connected to DB" );
-        System.out.println( "Adding df to terms" );
-      } else
+      if( connection == null )
         return;
+
+      System.out.println( "SUCCESS: Connected to DB" );
+      System.out.println( "Adding df to terms" );
 
       final String sqlQuery = "update `terms` set `df` = (" +
         "select count(`tf`) as `df` from `contains` " +
@@ -614,15 +548,9 @@ public class Load {
         "group by `term`);";
       final PreparedStatement statement = connection.prepareStatement( sqlQuery );
       statement.execute();
-      statement.close();
-      
-    } catch(SQLException e) {
-      e.printStackTrace();
-    } catch(ClassNotFoundException e) {
-      e.printStackTrace();
-    } catch(InstantiationException e) {
-      e.printStackTrace();
-    } catch(IllegalAccessException e) {
+
+      connection.close();
+    } catch( Exception e ) {
       e.printStackTrace();
     }
   }
@@ -632,19 +560,16 @@ public class Load {
     Connection connection;
 
     try {
-      // Enable driver,
-      Class.forName( DRIVER ).newInstance();
-      
+    
       // Open connection,
       connection = DriverManager.getConnection( DB );
 
       // Check if succesful.
-      if( connection != null ) {
-
-        System.out.println( "SUCCESS: Connected to DB" );
-        System.out.println( "Adding idf to terms" );
-      } else
+      if( connection == null )
         return;
+
+      System.out.println( SUCCESS );
+      System.out.println( DIVIDER + "Adding idf to terms" + DIVIDER );
 
       String sqlQuery = "CREATE TEMPORARY TABLE IF NOT EXISTS `temp` (" +
         "`term` varchar(32) NOT NULL, " +
@@ -668,15 +593,8 @@ public class Load {
       statement = connection.prepareStatement( sqlQuery );
       statement.execute();
 
-      statement.close();
-      
-    } catch(SQLException e) {
-      e.printStackTrace();
-    } catch(ClassNotFoundException e) {
-      e.printStackTrace();
-    } catch(InstantiationException e) {
-      e.printStackTrace();
-    } catch(IllegalAccessException e) {
+      connection.close();
+    } catch( Exception e ) {
       e.printStackTrace();
     }
   }

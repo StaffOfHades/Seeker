@@ -9,7 +9,7 @@
       "type": "java",
       "name": "Debug (Launch)",
       "request": "launch",
-      "mainClass": "buscador.Buscador",
+      "mainClass": "seeker.Main",
       "args": ""
     },
     {
