@@ -37,12 +37,14 @@ public class Graph<E extends Number> extends JFrame{
   public Graph(
     String appTitle,
     String chartTitle,
+    String xLabel,
     Map<String, List<E>> data) {
+    
     super(appTitle);
 
     JFreeChart chart = ChartFactory.createXYLineChart(
       chartTitle,
-      "Documents (#)",
+      xLabel,
       "Percetage (%)",
       createDataset(data),
       PlotOrientation.VERTICAL,
@@ -83,6 +85,14 @@ public class Graph<E extends Number> extends JFrame{
     setContentPane( panel );
 
     setDefaultCloseOperation( DISPOSE_ON_CLOSE );
+  }
+
+  public Graph(
+    String appTitle,
+    String chartTitle,
+    Map<String, List<E>> data) {
+
+      this( appTitle, chartTitle, "Documents (#)", data );
   }
 
   private XYDataset createDataset(Map<String, List<E>> data) {

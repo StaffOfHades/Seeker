@@ -61,8 +61,11 @@ public class View extends JFrame implements Constants {
       final JMenu edit = new JMenu( "Edit" );
       final JMenuBar menuBar = new JMenuBar();
       final JMenuItem export = new JMenuItem( "Export to CSV" );
-      final JMenuItem graphRP = new JMenuItem( "Graph Recall & Precision" );
+      final JMenuItem exportR = new JMenuItem( "Export Relevant to CSV" );
+      final JMenuItem graphAllRP = new JMenuItem( "Graph Recall & Precision" );
+      final JMenuItem graphRelevantRP = new JMenuItem( "Graph Relevant Recall & Precision" );
       final JMenuItem graphF = new JMenuItem( "Grap F1 & F2" );
+      final JMenuItem graphFR = new JMenuItem( "Grap Relevant F1 & F2" );
       toggleSearch = new JMenuItem( "Use Relevance Feedback" );
       resultArea = new JTextArea();
       queryField = new JTextField();
@@ -84,15 +87,35 @@ public class View extends JFrame implements Constants {
          }
       );
 
-      graphRP.addActionListener(
+      exportR.addActionListener(
          new ActionListener(){
       
             @Override
             public void actionPerformed(ActionEvent e) {
-               graphPrecisionAndRecall();
+               exportRelevantToCsv();
             }
          }
       );
+
+      graphAllRP.addActionListener(
+         new ActionListener(){
+      
+            @Override
+            public void actionPerformed(ActionEvent e) {
+               graphAllPrecisionAndRecall();
+            }
+         }
+      );
+
+      graphRelevantRP.addActionListener(
+            new ActionListener(){
+         
+               @Override
+               public void actionPerformed(ActionEvent e) {
+                  graphRelevantPrecisionAndRecall();
+               }
+            }
+         );
 
       graphF.addActionListener(
          new ActionListener(){
@@ -100,6 +123,16 @@ public class View extends JFrame implements Constants {
             @Override
             public void actionPerformed(ActionEvent e) {
                graphFMeasure();
+            }
+         }
+      );
+
+      graphFR.addActionListener(
+         new ActionListener(){
+      
+            @Override
+            public void actionPerformed(ActionEvent e) {
+               graphRelevantFMeasure();
             }
          }
       );
@@ -117,8 +150,11 @@ public class View extends JFrame implements Constants {
       menuBar.add( file );
       menuBar.add( edit );
       file.add( export );
-      file.add( graphRP );
+      file.add( exportR );
       file.add( graphF );
+      file.add( graphFR );
+      file.add( graphAllRP );
+      file.add( graphRelevantRP );
       edit.add( toggleSearch );
       this.setJMenuBar( menuBar );
 
@@ -177,9 +213,12 @@ public class View extends JFrame implements Constants {
                if( querySelector.getSelectedIndex() > 0 ) {
 
                   queryField.setText("");
+                  exportR.setEnabled( true );
                   toggleSearch.setEnabled( true );
-                  graphRP.setEnabled( true );
+                  graphAllRP.setEnabled( true );
+                  graphRelevantRP.setEnabled( true );
                   graphF.setEnabled( true );
+                  graphFR.setEnabled( true );
                }
             }
          }
@@ -196,9 +235,12 @@ public class View extends JFrame implements Constants {
                   querySelector.setSelectedIndex( 0 );
                   if( useRelevanceFeedback ) 
                      toggleSearch();
+                  exportR.setEnabled( false );
                   toggleSearch.setEnabled( false );
-                  graphRP.setEnabled( false );
+                  graphAllRP.setEnabled( false );
+                  graphRelevantRP.setEnabled( false );
                   graphF.setEnabled( false );
+                  graphFR.setEnabled( false );
                }
             }
          
@@ -210,9 +252,12 @@ public class View extends JFrame implements Constants {
                   querySelector.setSelectedIndex( 0 );
                   if( useRelevanceFeedback )
                      toggleSearch();
+                  exportR.setEnabled( false );
                   toggleSearch.setEnabled( false );
-                  graphRP.setEnabled( false );
+                  graphAllRP.setEnabled( false );
+                  graphRelevantRP.setEnabled( false );
                   graphF.setEnabled( false );
+                  graphFR.setEnabled( false );
                }
             }
          
@@ -224,9 +269,12 @@ public class View extends JFrame implements Constants {
                   querySelector.setSelectedIndex( 0 );
                   if( useRelevanceFeedback )
                      toggleSearch();
+                  exportR.setEnabled( false );
                   toggleSearch.setEnabled( false );
-                  graphRP.setEnabled( false );
+                  graphAllRP.setEnabled( false );
+                  graphRelevantRP.setEnabled( false );
                   graphF.setEnabled( false );
+                  graphFR.setEnabled( false );
                }
             }
          }
@@ -419,7 +467,40 @@ public class View extends JFrame implements Constants {
       }
    }
 
-   private void graphPrecisionAndRecall() {
+   private void graphRelevantPrecisionAndRecall() {
+
+      if( recall.size() <= 0 || precision.size() <= 0) {
+
+         JOptionPane.showMessageDialog( this, "A default query must be made" );
+         return;
+      }
+
+      final Map<String, List<Double>> map = new HashMap<String, List<Double>>();
+      final List<Double> precisionR = new ArrayList<>();
+      final List<Double> recallR = new ArrayList<>();
+      for( int i = 0; i < similars.size() && i < precision.size() && i < recall.size(); i++ ) {
+         final int id = similars.get( i ).getId();
+         final double p = precision.get( i );
+         final double r = recall.get( i );
+         if( relevants.contains( id ) ) {
+            precisionR.add( p );
+            recallR.add( r );
+         }
+      }
+      map.put("Precision", precisionR);
+      map.put("Recall", recallR);
+      String title = "Recall vs Precision for Relevant Documents (Query #" +
+         querySelector.getSelectedIndex();
+      if( useRelevanceFeedback )
+         title += " w/ Relevance Feedback";
+      title += ")";
+      Graph<Double> graph = new Graph<>("Grafica", title, map);
+      graph.pack();
+      RefineryUtilities.centerFrameOnScreen( graph );          
+      graph.setVisible( true );
+   }
+
+   private void graphAllPrecisionAndRecall() {
 
       if( recall.size() <= 0 || precision.size() <= 0) {
 
@@ -476,7 +557,47 @@ public class View extends JFrame implements Constants {
       graph.setVisible( true );
    }
 
+   private void graphRelevantFMeasure() {
+      if( recall.size() <= 0 || precision.size() <= 0) {
+
+         JOptionPane.showMessageDialog( this, "A default query must be made" );
+         return;
+      }
+
+      final Map<String, List<Double>> map = new HashMap<String, List<Double>>();
+      final List<Double> f1 = new ArrayList<>();
+      final List<Double> f2 = new ArrayList<>();
+      final double graphemePow2 = 4.0;
+      for( int i = 0; i < similars.size() && i < recall.size() && i < precision.size(); i++ ) {
+         final int id = similars.get( i ).getId();
+         final double p = precision.get( i );
+         final double r = recall.get( i );
+         if( relevants.contains( id ) )
+            f1.add( 2 * ( p * r ) / ( p + r ) );
+      }
+      for( int i = 0; i < similars.size() && i < recall.size() && i < precision.size(); i++ ) {
+         final int id = similars.get( i ).getId();
+         final double p = precision.get( i );
+         final double r = recall.get( i );
+         if( relevants.contains( id ) )
+            f2.add( (1 + graphemePow2 ) * ( p * r ) / ( graphemePow2 * p + r ) );
+      }
+      map.put("F1", f1);
+      map.put("F2", f2);
+
+      String title = "F1 vs F2 Measure (Query #" +
+      querySelector.getSelectedIndex();
+      if( useRelevanceFeedback )
+         title += " w/ Relevance Feedback";
+      title += ")";
+      Graph<Double> graph = new Graph<>("Grafica", title, map);
+      graph.pack();
+      RefineryUtilities.centerFrameOnScreen( graph );          
+      graph.setVisible( true );
+   }
+
    private void graphFMeasure( int grapheme ) {
+
       if( recall.size() <= 0 || precision.size() <= 0) {
 
          JOptionPane.showMessageDialog( this, "A default query must be made" );
@@ -506,6 +627,44 @@ public class View extends JFrame implements Constants {
       graph.pack();
       RefineryUtilities.centerFrameOnScreen( graph );          
       graph.setVisible( true );
+   }
+
+   private void exportRelevantToCsv() {
+
+      if( recall.size() <= 0 || precision.size() <= 0) {
+
+         JOptionPane.showMessageDialog( this, "A default query must be made" );
+         return;
+      }
+
+      final List<Integer> idsR = new ArrayList<>();
+      final List<Double> similaritiesR = new ArrayList<>();
+      final List<Double> precisionR = new ArrayList<>();
+      final List<Double> recallR = new ArrayList<>();
+      for( int i = 0; i < similars.size() && i < precision.size() && i < recall.size(); i++ ) {
+         final int id = similars.get( i ).getId();
+         final double s = similars.get( i ).getSimilarity();
+         final double p = precision.get( i );
+         final double r = relevants.get( i );
+         if( relevants.contains( id ) ) {
+            idsR.add( id );
+            similaritiesR.add( s );
+            precisionR.add( p );
+            recallR.add( r );
+         }
+      }
+      final Map<String, List<? extends Serializable>> csv =
+         new HashMap<String, List<? extends Serializable>>();
+
+      csv.put("Id", idsR);
+      if( precision.size() > 0 )
+         csv.put("Precision", precisionR);
+      if( recall.size() > 0 )
+         csv.put("Recall", recallR);
+      csv.put("Similarity", similaritiesR);
+
+      final Export export = new Export();
+      export.exportToCSV(csv, new File(PATH + "/grapher/data.csv"));
    }
 
    private void exportToCsv() {
