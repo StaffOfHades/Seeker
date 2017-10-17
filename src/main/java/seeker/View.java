@@ -61,7 +61,8 @@ public class View extends JFrame implements Constants {
       final JMenu edit = new JMenu( "Edit" );
       final JMenuBar menuBar = new JMenuBar();
       final JMenuItem export = new JMenuItem( "Export to CSV" );
-      final JMenuItem graph = new JMenuItem( "Graph Recall & Precision" );
+      final JMenuItem graphRP = new JMenuItem( "Graph Recall & Precision" );
+      final JMenuItem graphF = new JMenuItem( "Grap F1 & F2" );
       toggleSearch = new JMenuItem( "Use Relevance Feedback" );
       resultArea = new JTextArea();
       queryField = new JTextField();
@@ -83,12 +84,22 @@ public class View extends JFrame implements Constants {
          }
       );
 
-      graph.addActionListener(
+      graphRP.addActionListener(
          new ActionListener(){
       
             @Override
             public void actionPerformed(ActionEvent e) {
                graphPrecisionAndRecall();
+            }
+         }
+      );
+
+      graphF.addActionListener(
+         new ActionListener(){
+      
+            @Override
+            public void actionPerformed(ActionEvent e) {
+               graphFMeasure();
             }
          }
       );
@@ -106,7 +117,8 @@ public class View extends JFrame implements Constants {
       menuBar.add( file );
       menuBar.add( edit );
       file.add( export );
-      file.add( graph );
+      file.add( graphRP );
+      file.add( graphF );
       edit.add( toggleSearch );
       this.setJMenuBar( menuBar );
 
@@ -388,8 +400,78 @@ public class View extends JFrame implements Constants {
       final Map<String, List<Double>> map = new HashMap<String, List<Double>>();
       map.put("Precision", precision);
       map.put("Recall", recall);
-      final String title = "Recall vs Precision (Query #" +
-         querySelector.getSelectedIndex() + ")";
+      String title = "Recall vs Precision (Query #" +
+         querySelector.getSelectedIndex();
+      if( useRelevanceFeedback )
+         title += " w/ Relevance Feedback";
+      title += ")";
+      Graph<Double> graph = new Graph<>("Grafica", title, map);
+      graph.pack();
+      RefineryUtilities.centerFrameOnScreen( graph );          
+      graph.setVisible( true );
+   }
+
+   private void graphFMeasure() {
+      if( recall.size() <= 0 || precision.size() <= 0) {
+
+         JOptionPane.showMessageDialog( this, "A default query must be made" );
+         return;
+      }
+
+      final Map<String, List<Double>> map = new HashMap<String, List<Double>>();
+      final List<Double> f1 = new ArrayList<>();
+      final List<Double> f2 = new ArrayList<>();
+      final double graphemePow2 = 4.0;
+      for( int i = 0; i < recall.size() && i < precision.size(); i++ ) {
+         final double p = precision.get( i );
+         final double r = recall.get( i );
+         f1.add( 2 * ( p * r ) / ( p + r ) );
+      }
+      for( int i = 0; i < recall.size() && i < precision.size(); i++ ) {
+         final double p = precision.get( i );
+         final double r = recall.get( i );
+         f2.add( (1 + graphemePow2 ) * ( p * r ) / ( graphemePow2 * p + r ) );
+      }
+      map.put("F1", f1);
+      map.put("F2", f2);
+
+      String title = "F1 vs F2 Measure (Query #" +
+      querySelector.getSelectedIndex();
+      if( useRelevanceFeedback )
+         title += " w/ Relevance Feedback";
+      title += ")";
+      Graph<Double> graph = new Graph<>("Grafica", title, map);
+      graph.pack();
+      RefineryUtilities.centerFrameOnScreen( graph );          
+      graph.setVisible( true );
+   }
+
+   private void graphFMeasure( int grapheme ) {
+      if( recall.size() <= 0 || precision.size() <= 0) {
+
+         JOptionPane.showMessageDialog( this, "A default query must be made" );
+         return;
+      }
+
+      final Map<String, List<Double>> map = new HashMap<String, List<Double>>();
+      final List<Double> f = new ArrayList<>();
+      final double graphemePow2 = grapheme * grapheme * 1.0;
+      for( int i = 0; i < recall.size() && i < precision.size(); i++ ) {
+         final double p = precision.get( i );
+         final double r = recall.get( i );
+         f.add( (1 + graphemePow2 ) * ( p * r ) / ( graphemePow2 * p + r ) );
+      }
+      map.put("F" + grapheme, f);
+
+
+      String title = 
+         "F" +
+         grapheme +
+         " Measure (Query #" +
+         querySelector.getSelectedIndex();
+      if( useRelevanceFeedback )
+         title += " w/ Relevance Feedback";
+      title += ")";
       Graph<Double> graph = new Graph<>("Grafica", title, map);
       graph.pack();
       RefineryUtilities.centerFrameOnScreen( graph );          

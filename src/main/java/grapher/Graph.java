@@ -1,6 +1,7 @@
 package grapher;
 
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.BasicStroke;
 import java.util.List;
 import java.util.Map;
@@ -51,10 +52,10 @@ public class Graph<E extends Number> extends JFrame{
     );
 
     ChartPanel panel = new ChartPanel( chart );
-    panel.setPreferredSize(new java.awt.Dimension(1000, 540));
-    panel.setMouseZoomable(true, false);
-    panel.setRangeZoomable(true);
-    panel.setDomainZoomable(true);
+    panel.setPreferredSize( new Dimension( 1000, 540 ) );
+    panel.setMouseZoomable( true, false );
+    panel.setRangeZoomable( true );
+    panel.setDomainZoomable( true );
     final XYPlot plot = chart.getXYPlot();
 
     XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer();
