@@ -1,11 +1,12 @@
 /*** DOCUMENTS ***/
 
 /* Documens from collection */
-CREATE TABLE IF NOT EXISTS `documents` (
-	`id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  	`text` text NOT NULL,
-  	PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
+CREATE TABLE `documents` (
+  `id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `text` text NOT NULL,
+  `weight` double(20,15) unsigned NOT NULL DEFAULT 1.000000000000000,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 /* Terms from collection and queries */
 CREATE TABLE IF NOT EXISTS `terms` (
@@ -38,11 +39,12 @@ CREATE TABLE IF NOT EXISTS `contains` (
 /*** QUERIES ***/
 
 /* Pre-defined queries or User-defined queries */
-CREATE TABLE IF NOT EXISTS `queries` (
-  	`id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  	`text` text NOT NULL,
-  	PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+CREATE TABLE `queries` (
+  `id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `text` text NOT NULL,
+  `weight` double(20,15) unsigned NOT NULL DEFAULT 1.000000000000000,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8; 
 
 /* Relation between queries and terms */
 CREATE TABLE IF NOT EXISTS `made` (

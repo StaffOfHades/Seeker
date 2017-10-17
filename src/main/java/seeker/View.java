@@ -28,6 +28,7 @@ public class View extends JFrame implements Constants {
 
    // View Variables
    private JComboBox<String> querySelector;
+   private JMenuItem toggleSearch;
    private JTextArea resultArea;
    private JTextField queryField;
    
@@ -37,14 +38,16 @@ public class View extends JFrame implements Constants {
    private List<Integer> relevants;
    private List<Double> precision;
    private List<Double> recall;
+   private boolean useRelevanceFeedback;  
 
    public View() {
 
+      connect = Connect.getInstance();
       similars = new ArrayList<>();
       relevants = new ArrayList<>();
       precision = new ArrayList<>();
       recall = new ArrayList<>();
-      connect = Connect.getInstance();
+      useRelevanceFeedback = false;
       initComponents();
    }
 
@@ -55,9 +58,11 @@ public class View extends JFrame implements Constants {
       final JLabel resultLabel = new JLabel();
       final JLabel titleLabel = new JLabel();
       final JMenu file = new JMenu( "File" );
+      final JMenu edit = new JMenu( "Edit" );
       final JMenuBar menuBar = new JMenuBar();
       final JMenuItem export = new JMenuItem( "Export to CSV" );
       final JMenuItem graph = new JMenuItem( "Graph Recall & Precision" );
+      toggleSearch = new JMenuItem( "Use Relevance Feedback" );
       resultArea = new JTextArea();
       queryField = new JTextField();
 
@@ -88,9 +93,21 @@ public class View extends JFrame implements Constants {
          }
       );
 
+      toggleSearch.addActionListener(
+         new ActionListener(){
+      
+            @Override
+            public void actionPerformed(ActionEvent e) {
+               toggleSearch();
+            }
+         }
+      );
+
       menuBar.add( file );
+      menuBar.add( edit );
       file.add( export );
       file.add( graph );
+      edit.add( toggleSearch );
       this.setJMenuBar( menuBar );
 
       titleLabel.setFont(
@@ -262,7 +279,9 @@ public class View extends JFrame implements Constants {
          throw new Exception( "An idquery was uncessfuly found or created" );
 
       // Get similarity for a given idquery
-      similars = connect.getSimilarity( idquery );
+      similars = useRelevanceFeedback ?
+         connect.getSimilarityQ1( idquery ) :
+         connect.getSimilarity( idquery );
 
       if( similars == null )
          throw new Exception( "An error occured when getting similarity list" );
@@ -403,7 +422,15 @@ public class View extends JFrame implements Constants {
 
       final Export export = new Export();
       export.exportToCSV(csv, new File(PATH + "/grapher/data.csv"));
-   } 
+   }
+
+   private void toggleSearch() {
+      useRelevanceFeedback = !useRelevanceFeedback;
+      final String text = useRelevanceFeedback ? "Stop using Relevance Feedback" : "Use Relevance Feedback";
+      final String message = useRelevanceFeedback ? "Now using Relevance Feedback" : "No longer using Relevance Feedback";
+      System.out.println( message );
+      toggleSearch.setText( text );
+   }
 
    /**
     * @param args the command line arguments

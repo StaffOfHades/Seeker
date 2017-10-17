@@ -222,13 +222,16 @@ public class Connect implements Constants {
 
          // SQL Query to determine similarity using Vector Space Model.
          final String sqlQuery = 
-            "select `contains`.`iddoc`, " +
-            "sum(`contains`.`tf` * `terms`.`idf` * `made`.`tf` * `terms`.`idf`) as `similar` " +
-            "from `contains`, `made`, `terms` " +
-            "where `contains`.`term` = `terms`.`term` " +
+            "select `documents`.`id`, " +
+            "sum(`contains`.`tf` * `terms`.`idf` * `made`.`tf` * `terms`.`idf`) / " +
+            "(`documents`.`weight` * `queries`.`weight`) as `similar` " +
+            "from `queries`, `documents`, `contains`, `made`, `terms` " +
+            "where `documents`.`id` = `contains`.`iddoc` " +
+            "and `contains`.`term` = `terms`.`term` " +
             "and `made`.`term` = `terms`.`term` " +
-            "and `made`.`idquery` = ? " +
-            "group by `contains`.`iddoc` " +
+            "and `made`.`idquery` = `queries`.`id` " +
+            "and `queries`.`id` = ? " +
+            "group by `documents`.`id` " +
             "order by `similar` desc;"
          ;
          final PreparedStatement statement = connection.prepareStatement( sqlQuery );
@@ -255,6 +258,139 @@ public class Connect implements Constants {
       }
       return similars;
    }
+
+
+   // Return a list of all documents with a similarity
+   // in order descending for a given idquery
+   // after calculating query1 using Rocchio weights.
+   public List<Similar> getSimilarityQ1( int idquery ) {
+      
+      List<Similar> similars = null;
+      // Open connection to Database && Run query.
+      try {
+
+         // Open connection,
+         final Connection connection = DriverManager.getConnection( DB );
+
+         // Check if succesful.
+         if( connection == null )
+            return null;
+
+         System.out.println( SUCCESS );
+         System.out.println(
+            DIVIDER +
+            "Calculating new Q1 using Rocchio weights from query: #" +
+            idquery +
+            DIVIDER
+         );
+
+         // Drop table `temp` if exists.
+         String sqlQuery = "drop table if exists `temp`;";
+         PreparedStatement statement = connection.prepareStatement( sqlQuery );
+         statement.executeQuery();
+
+         // Add table `temp` if not exists.
+         sqlQuery = "CREATE TEMPORARY TABLE IF NOT EXISTS `temp` (" +
+            "`idquery` int(8) unsigned NOT NULL, " +
+            "`term` varchar(32) NOT NULL, " +
+            "`tf1` double(20,15) unsigned NOT NULL, " +
+            "PRIMARY KEY (`term`) " +
+         ") ENGINE=InnoDB DEFAULT CHARSET=utf8;";
+         statement = connection.prepareStatement( sqlQuery );
+         statement.executeQuery();
+
+         // SQL Query to generate new tfs using Rochio weights.
+         sqlQuery =
+         "insert into `temp` (`idquery`, `term`,`tf1`) select " +
+            "`made`.`idquery`, " +
+            "`made`.`term`, " +
+            "`made`.`tf` + 0.8 / " +
+            "(select " +
+               "count(`documents`.`id`) " +
+               "from `documents`, `relevant` " +
+               "where `documents`.`id` = `relevant`.`iddoc` " +
+               "and `relevant`.`idquery` = `made`.`idquery` " +
+            ") * sum(`contains`.`tf`) - 0.1 / " +
+            "(select " +
+               "(select count(`documents`.`id`) " +
+                  "from `documents` " +
+               ") - count(`documents`.`id`) " +
+               "from `documents`, `relevant` " +
+               "where `documents`.`id` = `relevant`.`iddoc` " +
+               "and `relevant`.`idquery` = `made`.`idquery` " +
+            ") * ( " +
+               "(select sum(`contains`.`tf`) " +
+                  "from `contains` " +
+                  "where `contains`.`term` = `made`.`term` " +
+               ") - sum(`contains`.`tf`) " +
+            ") as `tf1` " +
+            "from `contains`, `relevant`, `made` " +
+            "where `contains`.`term` = `made`.`term` " +
+            "and `contains`.`iddoc` = `relevant`.`iddoc` " +
+            "and `relevant`.`idquery` = `made`.`idquery` " +
+            "and `made`.`idquery` = ? " +
+            "group by `made`.`term`;";
+         statement = connection.prepareStatement( sqlQuery );
+         statement.setInt( 1, idquery );
+         statement.executeQuery();
+
+         sqlQuery =
+            "update `made` " +
+            "inner join `temp` " +
+            "on `made`.`term` = `temp`.`term` " +
+            "and `made`.`idquery` = `temp`.`idquery` " +
+            "set `made`.`tf1` = `temp`.`tf1`";
+         statement = connection.prepareStatement( sqlQuery );
+         statement.executeQuery();
+      
+         System.out.println( SUCCESS );
+         System.out.println(
+            DIVIDER +
+            "Use dot product to get similarity for new query q1 from query: #" +
+            idquery +
+            DIVIDER
+         );
+
+         similars = new ArrayList<>();
+
+         // SQL Query to determine similarity using Vector Space Model.
+         sqlQuery = 
+            "select `documents`.`id`, " +
+            "sum(`contains`.`tf` * `terms`.`idf` * `made`.`tf1` * `terms`.`idf`) / " +
+            "(`documents`.`weight` * `queries`.`weight`) as `similar` " +
+            "from `queries`, `documents`, `contains`, `made`, `terms` " +
+            "where `documents`.`id` = `contains`.`iddoc` " +
+            "and `contains`.`term` = `terms`.`term` " +
+            "and `made`.`term` = `terms`.`term` " +
+            "and `made`.`idquery` = `queries`.`id` " +
+            "and `queries`.`id` = ? " +
+            "group by `documents`.`id` " +
+            "order by `similar` desc;"
+         ;
+         statement = connection.prepareStatement( sqlQuery );
+         statement.setInt( 1, idquery );
+
+         // Execute query & parse result.
+         final ResultSet result = statement.executeQuery();
+
+         // Add all results to list
+         while( result.next() ) {
+
+            // Save into custom class for later retrieval,
+            final Similar similar = new Similar(
+               result.getInt( 1 ),
+               result.getDouble( 2 )
+            );
+            // Add to list for a more permanent storage.
+            similars.add( similar );
+         }
+         connection.close();
+      } catch( Exception e ) {
+
+         e.printStackTrace();
+      }
+      return similars;
+  }
 
    // Return a list of all iddoc that are relevant
    // for a given idquery.
@@ -848,4 +984,21 @@ public class Connect implements Constants {
       return idquery;
    }
 }
+
+
+
+update `documents` set `weight` = 1;
+update `queries` set `weight` = 1;
+
+update `documents` set `weight` = (select sqrt(sum(`contains`.`tf`*`terms`.`idf`*`contains`.`tf`*`terms`.`idf`)) from `contains`, `terms` where `documents`.`id` = `contains`.`iddoc` and `contains`.`term` = `terms`.`term`);
+
+update `queries` set `weight` = (select sqrt(sum(`made`.`tf`*`terms`.`idf`*`made`.`tf`*`terms`.`idf`)) from `made`, `terms` where `queries`.`id` = `made`.`idquery` and `made`.`term` = `terms`.`term`);
+
+select `contains`.`iddoc`, sum(`contains`.`tf` * `terms`.`idf` * `made`.`tf` * `terms`.`idf`) as `similar` from `contains`, `made`, `terms` where `contains`.`term` = `terms`.`term` and `made`.`term` = `terms`.`term` and `made`.`idquery` = 1 group by `contains`.`iddoc` order by `similar` desc;
+
+select `contains`.`iddoc`, sum(`contains`.`tf` * `terms`.`idf` * `made`.`tf` * `terms`.`idf`) / (`documents`.`weight` * `queries`.`weight`) as `similar` from `documents`, `queries`, `contains`, `made`, `terms` where `documents`.`id` = `contains`.`iddoc` and `contains`.`term` = `terms`.`term` and `queries`.`id` = `made`.`idquery` and `made`.`term` = `terms`.`term` and `made`.`idquery` = 1 group by `contains`.`iddoc` order by `similar` desc;
+
+
+
+select `queries`.`id`, sum(`contains`.`tf` * `terms`.`idf` * `made`.`tf` * `terms`.`idf`) / (`documents`.`weight` * `queries`.`weight`) as `similar` from `queries`, `documents`, `contains`, `made`, `terms` where `documents`.`id` = `contains`.`iddoc` and `contains`.`term` = `terms`.`term` and `made`.`term` = `terms`.`term` and `made`.`idquery` = `queries`.`id` and `queries`.`id` = 1 group by `queries`.`id` order by `similar` desc;
 */

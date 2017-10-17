@@ -574,7 +574,7 @@ public class Load implements Constants {
       String sqlQuery = "CREATE TEMPORARY TABLE IF NOT EXISTS `temp` (" +
         "`term` varchar(32) NOT NULL, " +
         "`idf` double(20,15) unsigned DEFAULT NULL, " +
-        "PRIMARY KEY (`term`)" +
+        "PRIMARY KEY (`term`) " +
       ") ENGINE=InnoDB DEFAULT CHARSET=utf8;";
       PreparedStatement statement = connection.prepareStatement( sqlQuery );
       statement.execute();
@@ -634,4 +634,10 @@ public class Load implements Constants {
       stream.isParallel()
     );
   }
+
+  /*
+  update `documents` set `weight` = (select sqrt(sum(`contains`.`tf`*`terms`.`idf`*`contains`.`tf`*`terms`.`idf`)) from `contains`, `terms` where `documents`.`id` = `contains`.`iddoc` and `contains`.`term` = `terms`.`term`);
+
+  update `queries` set `weight` = (select sqrt(sum(`made`.`tf`*`terms`.`idf`*`made`.`tf`*`terms`.`idf`)) from `made`, `terms` where `queries`.`id` = `made`.`idquery` and `made`.`term` = `terms`.`term`);
+  */
 }
