@@ -173,8 +173,14 @@ public class View extends JFrame implements Constants {
          
             @Override
             public void actionPerformed(ActionEvent e) {
-               if( querySelector.getSelectedIndex() > 0 )
+
+               if( querySelector.getSelectedIndex() > 0 ) {
+
                   queryField.setText("");
+                  toggleSearch.setEnabled( true );
+                  graphRP.setEnabled( true );
+                  graphF.setEnabled( true );
+               }
             }
          }
       );
@@ -184,20 +190,44 @@ public class View extends JFrame implements Constants {
          
             @Override
             public void removeUpdate(DocumentEvent e) {
-               if( queryField.getText().trim().length() >  0 )
+
+               if( queryField.getText().trim().length() >  0 ) {
+
                   querySelector.setSelectedIndex( 0 );
+                  if( useRelevanceFeedback ) 
+                     toggleSearch();
+                  toggleSearch.setEnabled( false );
+                  graphRP.setEnabled( false );
+                  graphF.setEnabled( false );
+               }
             }
          
             @Override
             public void insertUpdate(DocumentEvent e) {
-               if( queryField.getText().trim().length() > 0 )
+
+               if( queryField.getText().trim().length() >  0 ) {
+                  
                   querySelector.setSelectedIndex( 0 );
+                  if( useRelevanceFeedback )
+                     toggleSearch();
+                  toggleSearch.setEnabled( false );
+                  graphRP.setEnabled( false );
+                  graphF.setEnabled( false );
+               }
             }
          
             @Override
             public void changedUpdate(DocumentEvent e) {
-               if( queryField.getText().trim().length() > 0 )
+               
+               if( queryField.getText().trim().length() >  0 ) {
+                  
                   querySelector.setSelectedIndex( 0 );
+                  if( useRelevanceFeedback )
+                     toggleSearch();
+                  toggleSearch.setEnabled( false );
+                  graphRP.setEnabled( false );
+                  graphF.setEnabled( false );
+               }
             }
          }
       );
@@ -495,6 +525,16 @@ public class View extends JFrame implements Constants {
       final Map<String, List<? extends Serializable>> csv =
          new HashMap<String, List<? extends Serializable>>();
 
+
+      if( relevants.size() > 0 ) {
+
+         final List<Character> isRelevant = new ArrayList<>();
+         for( int id : ids )
+            isRelevant.add( relevants.contains(id) ? 'R' : 'N' );
+
+         csv.put("Relevant", isRelevant);
+      }
+
       csv.put("Id", ids);
       if( precision.size() > 0 )
          csv.put("Precision", precision);
@@ -507,6 +547,7 @@ public class View extends JFrame implements Constants {
    }
 
    private void toggleSearch() {
+
       useRelevanceFeedback = !useRelevanceFeedback;
       final String text = useRelevanceFeedback ? "Stop using Relevance Feedback" : "Use Relevance Feedback";
       final String message = useRelevanceFeedback ? "Now using Relevance Feedback" : "No longer using Relevance Feedback";

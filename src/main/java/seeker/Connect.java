@@ -522,11 +522,12 @@ public class Connect implements Constants {
                      prepared.execute();
       
                      // SQL Query to add into made the word, tf, and idquery.
-                     sql_query = "insert into `made` (`idquery`, `term`, `tf`) values (?, ?, ?);";
+                     sql_query = "insert into `made` (`idquery`, `term`, `tf`, `tf1`) values (?, ?, ?, ?);";
                      prepared = connection.prepareStatement( sql_query );
                      prepared.setInt( 1, id_query );
                      prepared.setString( 2, word );
                      prepared.setInt( 3, count );
+                     prepared.setInt( 4, count );
                      
                      // Execute query
                      prepared.execute();
