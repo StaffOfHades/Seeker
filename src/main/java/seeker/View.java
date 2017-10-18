@@ -1,8 +1,5 @@
 package seeker;
 
-import grapher.Export;
-import grapher.Graph;
-
 import java.awt.*;
 import java.awt.event.*;
 import java.io.File;
@@ -14,6 +11,10 @@ import java.util.Map;
 import java.util.ArrayList;
 import javax.swing.*;
 import javax.swing.event.*;
+
+import manager.*;
+
+import processer.*;
 
 import org.jfree.ui.RefineryUtilities;
 
@@ -27,8 +28,8 @@ public class View extends JFrame implements Constants {
    static final long serialVersionUID = 25L;
 
    // View Variables
+   private JCheckBoxMenuItem toggleSearch;
    private JComboBox<String> querySelector;
-   private JMenuItem toggleSearch;
    private JTextArea resultArea;
    private JTextField queryField;
    
@@ -38,7 +39,6 @@ public class View extends JFrame implements Constants {
    private List<Integer> relevants;
    private List<Double> precision;
    private List<Double> recall;
-   private boolean useRelevanceFeedback;  
 
    public View() {
 
@@ -47,125 +47,62 @@ public class View extends JFrame implements Constants {
       relevants = new ArrayList<>();
       precision = new ArrayList<>();
       recall = new ArrayList<>();
-      useRelevanceFeedback = false;
       initComponents();
    }
 
    private void initComponents() {
       
       final JButton searchTerm = new JButton();
+      toggleSearch = new JCheckBoxMenuItem( "Use Relevance Feedback" );
       querySelector = new JComboBox<>( connect.getQueries() );
       final JLabel resultLabel = new JLabel();
       final JLabel titleLabel = new JLabel();
       final JMenu file = new JMenu( "File" );
       final JMenu edit = new JMenu( "Edit" );
+      final JMenu graph = new JMenu( "Graph" );
+      final JMenu relevant = new JMenu( "Relevant" );
       final JMenuBar menuBar = new JMenuBar();
       final JMenuItem export = new JMenuItem( "Export to CSV" );
-      final JMenuItem exportR = new JMenuItem( "Export Relevant to CSV" );
-      final JMenuItem graphAllRP = new JMenuItem( "Graph Recall & Precision" );
-      final JMenuItem graphRelevantRP = new JMenuItem( "Graph Relevant Recall & Precision" );
-      final JMenuItem graphF = new JMenuItem( "Grap F1 & F2" );
-      final JMenuItem graphFR = new JMenuItem( "Grap Relevant F1 & F2" );
-      toggleSearch = new JMenuItem( "Use Relevance Feedback" );
+      final JMenuItem exportR = new JMenuItem( "Export (Relevant) to CSV" );
+      final JMenuItem graphRP = new JMenuItem( "Recall & Precision" );
+      final JMenuItem graphRelevantRP = new JMenuItem( "Recall & Precision" );
+      final JMenuItem graphF = new JMenuItem( "F1 & F2" );
+      final JMenuItem graphFR = new JMenuItem( "F1 & F2" );
+      final JMenuItem[] items = {toggleSearch, exportR, graphF, graphRP, relevant};
       resultArea = new JTextArea();
       queryField = new JTextField();
-
       final JScrollPane scroll = new JScrollPane( resultArea );
+      final GroupLayout layout = new GroupLayout( getContentPane() );
 
-      scroll.setVerticalScrollBarPolicy( ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS );
+      final ActionListener listener = new ActionListener() {
 
-      setDefaultCloseOperation( WindowConstants.EXIT_ON_CLOSE );
-      setTitle( "HW5" );
+         @Override
+         public void actionPerformed(ActionEvent e) {
 
-      export.addActionListener(
-         new ActionListener(){
-      
-            @Override
-            public void actionPerformed(ActionEvent e) {
+            if( !(e.getSource() instanceof JMenuItem) )
+               return;
+
+            final JMenuItem item = (JMenuItem) e.getSource();
+            if( item == export )
                exportToCsv();
-            }
-         }
-      );
-
-      exportR.addActionListener(
-         new ActionListener(){
-      
-            @Override
-            public void actionPerformed(ActionEvent e) {
+            else if( item == exportR )
                exportRelevantToCsv();
-            }
+            else if( item == graphRP )
+               graphPrecisionAndRecall();
+            else if( item == graphRelevantRP )
+               graphRelevantPrecisionAndRecall();
+            else if( item == graphF )
+               graphFMeasure( new int[] {1, 2} );
+            else if( item == graphFR )
+               graphRelevantFMeasure( new int[] {1, 2} );
          }
+      };
+
+      final Font title = new Font(
+         TYPEFACE,
+         0,
+         TEXT_TITLE
       );
-
-      graphAllRP.addActionListener(
-         new ActionListener(){
-      
-            @Override
-            public void actionPerformed(ActionEvent e) {
-               graphAllPrecisionAndRecall();
-            }
-         }
-      );
-
-      graphRelevantRP.addActionListener(
-            new ActionListener(){
-         
-               @Override
-               public void actionPerformed(ActionEvent e) {
-                  graphRelevantPrecisionAndRecall();
-               }
-            }
-         );
-
-      graphF.addActionListener(
-         new ActionListener(){
-      
-            @Override
-            public void actionPerformed(ActionEvent e) {
-               graphFMeasure();
-            }
-         }
-      );
-
-      graphFR.addActionListener(
-         new ActionListener(){
-      
-            @Override
-            public void actionPerformed(ActionEvent e) {
-               graphRelevantFMeasure();
-            }
-         }
-      );
-
-      toggleSearch.addActionListener(
-         new ActionListener(){
-      
-            @Override
-            public void actionPerformed(ActionEvent e) {
-               toggleSearch();
-            }
-         }
-      );
-
-      menuBar.add( file );
-      menuBar.add( edit );
-      file.add( export );
-      file.add( exportR );
-      file.add( graphF );
-      file.add( graphFR );
-      file.add( graphAllRP );
-      file.add( graphRelevantRP );
-      edit.add( toggleSearch );
-      this.setJMenuBar( menuBar );
-
-      titleLabel.setFont(
-         new Font(
-            TYPEFACE,
-            0,
-            TEXT_TITLE
-         )
-      );
-      titleLabel.setText( "Buscador v.2" );
 
       final Font header = new Font(
          TYPEFACE,
@@ -173,13 +110,44 @@ public class View extends JFrame implements Constants {
          TEXT_HEADER
       );
 
-      queryField.setFont( header );
-
       final Font body = new Font(
          TYPEFACE,
          0,
          TEXT_BODY
       );
+
+
+      toggleSearch.setSelected( false );
+
+      menuBar.add( file );
+      menuBar.add( edit );
+      menuBar.add( graph );
+      file.add( export );
+      file.add( exportR );
+      edit.add( toggleSearch );
+      graph.add( graphF );
+      graph.add( graphRP );
+      graph.add( relevant );
+      relevant.add( graphFR );
+      relevant.add( graphRelevantRP );
+      this.setJMenuBar( menuBar );
+
+      scroll.setVerticalScrollBarPolicy( ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS );
+
+      setDefaultCloseOperation( WindowConstants.EXIT_ON_CLOSE );
+      setTitle( TITLE );
+
+      export.addActionListener( listener );
+      exportR.addActionListener( listener );
+      graphRP.addActionListener( listener );
+      graphRelevantRP.addActionListener( listener );
+      graphF.addActionListener( listener );
+      graphFR.addActionListener( listener );
+
+      titleLabel.setFont( title );
+      titleLabel.setText( "Buscador v.2" );
+
+      queryField.setFont( header );
 
       searchTerm.setFont( body );
       searchTerm.setText( "Buscar" );
@@ -213,12 +181,7 @@ public class View extends JFrame implements Constants {
                if( querySelector.getSelectedIndex() > 0 ) {
 
                   queryField.setText("");
-                  exportR.setEnabled( true );
-                  toggleSearch.setEnabled( true );
-                  graphAllRP.setEnabled( true );
-                  graphRelevantRP.setEnabled( true );
-                  graphF.setEnabled( true );
-                  graphFR.setEnabled( true );
+                  setMenuEnabled(items, true);
                }
             }
          }
@@ -230,57 +193,26 @@ public class View extends JFrame implements Constants {
             @Override
             public void removeUpdate(DocumentEvent e) {
 
-               if( queryField.getText().trim().length() >  0 ) {
-
-                  querySelector.setSelectedIndex( 0 );
-                  if( useRelevanceFeedback ) 
-                     toggleSearch();
-                  exportR.setEnabled( false );
-                  toggleSearch.setEnabled( false );
-                  graphAllRP.setEnabled( false );
-                  graphRelevantRP.setEnabled( false );
-                  graphF.setEnabled( false );
-                  graphFR.setEnabled( false );
-               }
+               if( queryField.getText().trim().length() >  0 )
+                  disableMenu( items );
             }
          
             @Override
             public void insertUpdate(DocumentEvent e) {
 
-               if( queryField.getText().trim().length() >  0 ) {
-                  
-                  querySelector.setSelectedIndex( 0 );
-                  if( useRelevanceFeedback )
-                     toggleSearch();
-                  exportR.setEnabled( false );
-                  toggleSearch.setEnabled( false );
-                  graphAllRP.setEnabled( false );
-                  graphRelevantRP.setEnabled( false );
-                  graphF.setEnabled( false );
-                  graphFR.setEnabled( false );
-               }
+               if( queryField.getText().trim().length() >  0 )
+                  disableMenu( items );
             }
          
             @Override
             public void changedUpdate(DocumentEvent e) {
                
-               if( queryField.getText().trim().length() >  0 ) {
-                  
-                  querySelector.setSelectedIndex( 0 );
-                  if( useRelevanceFeedback )
-                     toggleSearch();
-                  exportR.setEnabled( false );
-                  toggleSearch.setEnabled( false );
-                  graphAllRP.setEnabled( false );
-                  graphRelevantRP.setEnabled( false );
-                  graphF.setEnabled( false );
-                  graphFR.setEnabled( false );
-               }
+               if( queryField.getText().trim().length() >  0 )
+                  disableMenu( items );
             }
          }
       );
 
-      GroupLayout layout = new GroupLayout( getContentPane() );
       getContentPane().setLayout(layout);
       layout.setHorizontalGroup(
          layout.createParallelGroup(GroupLayout.Alignment.LEADING)
@@ -343,6 +275,18 @@ public class View extends JFrame implements Constants {
       pack();
    }
 
+   private void setMenuEnabled( final JMenuItem[] items, boolean enabled ) {
+      for(JMenuItem item : items)
+         item.setEnabled(enabled);
+   }
+
+   private void disableMenu( final JMenuItem[] items ) {
+
+      querySelector.setSelectedIndex( 0 );
+      toggleSearch.setSelected( false );
+      setMenuEnabled(items, false);
+   }
+
    // Search for term in collection, and return relevant documents in order.
    private void buscarTerminoActionPerformed( ActionEvent event ) throws Exception {
 
@@ -369,7 +313,7 @@ public class View extends JFrame implements Constants {
          throw new Exception( "An idquery was uncessfuly found or created" );
 
       // Get similarity for a given idquery
-      similars = useRelevanceFeedback ?
+      similars = toggleSearch.isSelected() ?
          connect.getSimilarityQ1( idquery ) :
          connect.getSimilarity( idquery );
 
@@ -388,7 +332,6 @@ public class View extends JFrame implements Constants {
 
       // Get relevant documents
       relevants = connect.getRelevants( idquery );
-
 
       // Iterate over the first 100 documents found
       String text = "";
@@ -462,9 +405,43 @@ public class View extends JFrame implements Constants {
             counter +
             ", of which " +
             found +
-            " where relvant"
+            " where relevant"
          );
       }
+   }
+
+   private void graph( Map<String, List<Double>> map, String heading, String xLabel ) {
+
+      String title = heading + " (Query #" + querySelector.getSelectedIndex();
+      if( toggleSearch.isSelected() )
+         title += " w/ Relevance Feedback";
+      title += ")";
+      final Graph<Double> graph = new Graph<>("Grafica", title, xLabel, map);
+      graph.pack();
+      RefineryUtilities.centerFrameOnScreen( graph );          
+      graph.setVisible( true );
+   }
+
+   private void graphPrecisionAndRecall(
+      List<Double> precision,
+      List<Double> recall,
+      String xLabel
+   ) {
+      if( recall.size() <= 0 || precision.size() <= 0) {
+
+         JOptionPane.showMessageDialog( this, "A default query must be made" );
+         return;
+      }
+
+      final Map<String, List<Double>> map = new HashMap<String, List<Double>>();
+      map.put("Precision", precision);
+      map.put("Recall", recall);
+      graph( map, "Recall vs Precision", xLabel );
+      
+   }
+
+   private void graphPrecisionAndRecall() {
+      graphPrecisionAndRecall( precision, recall, "Documents (#)" );
    }
 
    private void graphRelevantPrecisionAndRecall() {
@@ -475,33 +452,29 @@ public class View extends JFrame implements Constants {
          return;
       }
 
-      final Map<String, List<Double>> map = new HashMap<String, List<Double>>();
       final List<Double> precisionR = new ArrayList<>();
       final List<Double> recallR = new ArrayList<>();
       for( int i = 0; i < similars.size() && i < precision.size() && i < recall.size(); i++ ) {
+
          final int id = similars.get( i ).getId();
          final double p = precision.get( i );
          final double r = recall.get( i );
          if( relevants.contains( id ) ) {
+
             precisionR.add( p );
             recallR.add( r );
          }
       }
-      map.put("Precision", precisionR);
-      map.put("Recall", recallR);
-      String title = "Recall vs Precision for Relevant Documents (Query #" +
-         querySelector.getSelectedIndex();
-      if( useRelevanceFeedback )
-         title += " w/ Relevance Feedback";
-      title += ")";
-      Graph<Double> graph = new Graph<>("Grafica", title, map);
-      graph.pack();
-      RefineryUtilities.centerFrameOnScreen( graph );          
-      graph.setVisible( true );
+      graphPrecisionAndRecall( precisionR, recallR, "Relevant (#)" );
    }
 
-   private void graphAllPrecisionAndRecall() {
-
+   private void graphFMeasure(
+      int[] graphemes,
+      List<Double> precision,
+      List<Double> recall,
+      String xLabel
+   ) {
+      
       if( recall.size() <= 0 || precision.size() <= 0) {
 
          JOptionPane.showMessageDialog( this, "A default query must be made" );
@@ -509,94 +482,26 @@ public class View extends JFrame implements Constants {
       }
 
       final Map<String, List<Double>> map = new HashMap<String, List<Double>>();
-      map.put("Precision", precision);
-      map.put("Recall", recall);
-      String title = "Recall vs Precision (Query #" +
-         querySelector.getSelectedIndex();
-      if( useRelevanceFeedback )
-         title += " w/ Relevance Feedback";
-      title += ")";
-      Graph<Double> graph = new Graph<>("Grafica", title, map);
-      graph.pack();
-      RefineryUtilities.centerFrameOnScreen( graph );          
-      graph.setVisible( true );
+      for( int grapheme : graphemes ) {
+
+         final double graphemePow2 = grapheme * grapheme;
+         final List<Double> fn = new ArrayList<>();
+         for( int i = 0; i < recall.size() && i < precision.size(); i++ ) {
+
+            final double p = precision.get( i );
+            final double r = recall.get( i );
+            fn.add( ( 1 + graphemePow2 ) * ( p * r ) / ( graphemePow2 * p + r ) );
+         }
+         map.put( "F" + grapheme, fn );
+      }
+      graph( map, "F Measure Comparison", xLabel );
    }
 
-   private void graphFMeasure() {
-      if( recall.size() <= 0 || precision.size() <= 0) {
-
-         JOptionPane.showMessageDialog( this, "A default query must be made" );
-         return;
-      }
-
-      final Map<String, List<Double>> map = new HashMap<String, List<Double>>();
-      final List<Double> f1 = new ArrayList<>();
-      final List<Double> f2 = new ArrayList<>();
-      final double graphemePow2 = 4.0;
-      for( int i = 0; i < recall.size() && i < precision.size(); i++ ) {
-         final double p = precision.get( i );
-         final double r = recall.get( i );
-         f1.add( 2 * ( p * r ) / ( p + r ) );
-      }
-      for( int i = 0; i < recall.size() && i < precision.size(); i++ ) {
-         final double p = precision.get( i );
-         final double r = recall.get( i );
-         f2.add( (1 + graphemePow2 ) * ( p * r ) / ( graphemePow2 * p + r ) );
-      }
-      map.put("F1", f1);
-      map.put("F2", f2);
-
-      String title = "F1 vs F2 Measure (Query #" +
-      querySelector.getSelectedIndex();
-      if( useRelevanceFeedback )
-         title += " w/ Relevance Feedback";
-      title += ")";
-      Graph<Double> graph = new Graph<>("Grafica", title, map);
-      graph.pack();
-      RefineryUtilities.centerFrameOnScreen( graph );          
-      graph.setVisible( true );
+   private void graphFMeasure( int[] graphemes ) {
+      graphFMeasure( graphemes, precision, recall, "Documents (#)" );
    }
 
-   private void graphRelevantFMeasure() {
-      if( recall.size() <= 0 || precision.size() <= 0) {
-
-         JOptionPane.showMessageDialog( this, "A default query must be made" );
-         return;
-      }
-
-      final Map<String, List<Double>> map = new HashMap<String, List<Double>>();
-      final List<Double> f1 = new ArrayList<>();
-      final List<Double> f2 = new ArrayList<>();
-      final double graphemePow2 = 4.0;
-      for( int i = 0; i < similars.size() && i < recall.size() && i < precision.size(); i++ ) {
-         final int id = similars.get( i ).getId();
-         final double p = precision.get( i );
-         final double r = recall.get( i );
-         if( relevants.contains( id ) )
-            f1.add( 2 * ( p * r ) / ( p + r ) );
-      }
-      for( int i = 0; i < similars.size() && i < recall.size() && i < precision.size(); i++ ) {
-         final int id = similars.get( i ).getId();
-         final double p = precision.get( i );
-         final double r = recall.get( i );
-         if( relevants.contains( id ) )
-            f2.add( (1 + graphemePow2 ) * ( p * r ) / ( graphemePow2 * p + r ) );
-      }
-      map.put("F1", f1);
-      map.put("F2", f2);
-
-      String title = "F1 vs F2 Measure (Query #" +
-      querySelector.getSelectedIndex();
-      if( useRelevanceFeedback )
-         title += " w/ Relevance Feedback";
-      title += ")";
-      Graph<Double> graph = new Graph<>("Grafica", title, map);
-      graph.pack();
-      RefineryUtilities.centerFrameOnScreen( graph );          
-      graph.setVisible( true );
-   }
-
-   private void graphFMeasure( int grapheme ) {
+   private void graphRelevantFMeasure( int[] graphemes ) {
 
       if( recall.size() <= 0 || precision.size() <= 0) {
 
@@ -604,67 +509,20 @@ public class View extends JFrame implements Constants {
          return;
       }
 
-      final Map<String, List<Double>> map = new HashMap<String, List<Double>>();
-      final List<Double> f = new ArrayList<>();
-      final double graphemePow2 = grapheme * grapheme * 1.0;
-      for( int i = 0; i < recall.size() && i < precision.size(); i++ ) {
-         final double p = precision.get( i );
-         final double r = recall.get( i );
-         f.add( (1 + graphemePow2 ) * ( p * r ) / ( graphemePow2 * p + r ) );
-      }
-      map.put("F" + grapheme, f);
-
-
-      String title = 
-         "F" +
-         grapheme +
-         " Measure (Query #" +
-         querySelector.getSelectedIndex();
-      if( useRelevanceFeedback )
-         title += " w/ Relevance Feedback";
-      title += ")";
-      Graph<Double> graph = new Graph<>("Grafica", title, map);
-      graph.pack();
-      RefineryUtilities.centerFrameOnScreen( graph );          
-      graph.setVisible( true );
-   }
-
-   private void exportRelevantToCsv() {
-
-      if( recall.size() <= 0 || precision.size() <= 0) {
-
-         JOptionPane.showMessageDialog( this, "A default query must be made" );
-         return;
-      }
-
-      final List<Integer> idsR = new ArrayList<>();
-      final List<Double> similaritiesR = new ArrayList<>();
       final List<Double> precisionR = new ArrayList<>();
       final List<Double> recallR = new ArrayList<>();
       for( int i = 0; i < similars.size() && i < precision.size() && i < recall.size(); i++ ) {
+
          final int id = similars.get( i ).getId();
-         final double s = similars.get( i ).getSimilarity();
          final double p = precision.get( i );
-         final double r = relevants.get( i );
+         final double r = recall.get( i );
          if( relevants.contains( id ) ) {
-            idsR.add( id );
-            similaritiesR.add( s );
+
             precisionR.add( p );
             recallR.add( r );
          }
       }
-      final Map<String, List<? extends Serializable>> csv =
-         new HashMap<String, List<? extends Serializable>>();
-
-      csv.put("Id", idsR);
-      if( precision.size() > 0 )
-         csv.put("Precision", precisionR);
-      if( recall.size() > 0 )
-         csv.put("Recall", recallR);
-      csv.put("Similarity", similaritiesR);
-
-      final Export export = new Export();
-      export.exportToCSV(csv, new File(PATH + "/grapher/data.csv"));
+      graphFMeasure( graphemes, precisionR, recallR, "Relevant (#)" );
    }
 
    private void exportToCsv() {
@@ -702,16 +560,47 @@ public class View extends JFrame implements Constants {
       csv.put("Similarity", similarities);
 
       final Export export = new Export();
-      export.exportToCSV(csv, new File(PATH + "/grapher/data.csv"));
+      export.exportToCSV(csv, new File(PATH + "/processer/data.csv"));
+      System.out.println( "Sucessfully exported all Documents to CSV" );
    }
 
-   private void toggleSearch() {
+   private void exportRelevantToCsv() {
 
-      useRelevanceFeedback = !useRelevanceFeedback;
-      final String text = useRelevanceFeedback ? "Stop using Relevance Feedback" : "Use Relevance Feedback";
-      final String message = useRelevanceFeedback ? "Now using Relevance Feedback" : "No longer using Relevance Feedback";
-      System.out.println( message );
-      toggleSearch.setText( text );
+      if( recall.size() <= 0 || precision.size() <= 0) {
+
+         JOptionPane.showMessageDialog( this, "A default query must be made" );
+         return;
+      }
+
+      final List<Integer> idsR = new ArrayList<>();
+      final List<Double> similaritiesR = new ArrayList<>();
+      final List<Double> precisionR = new ArrayList<>();
+      final List<Double> recallR = new ArrayList<>();
+      for( int i = 0; i < similars.size() && i < precision.size() && i < recall.size(); i++ ) {
+         final int id = similars.get( i ).getId();
+         final double s = similars.get( i ).getSimilarity();
+         final double p = precision.get( i );
+         final double r = recall.get( i );
+         if( relevants.contains( id ) ) {
+            idsR.add( id );
+            similaritiesR.add( s );
+            precisionR.add( p );
+            recallR.add( r );
+         }
+      }
+      final Map<String, List<? extends Serializable>> csv =
+         new HashMap<String, List<? extends Serializable>>();
+
+      csv.put("Id", idsR);
+      if( precision.size() > 0 )
+         csv.put("Precision", precisionR);
+      if( recall.size() > 0 )
+         csv.put("Recall", recallR);
+      csv.put("Similarity", similaritiesR);
+
+      final Export export = new Export();
+      export.exportToCSV(csv, new File(PATH + "/processer/relevant.csv"));
+      System.out.println( "Sucessfully exported Relevant Documents to CSV" );
    }
 
    /**

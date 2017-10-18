@@ -1,4 +1,4 @@
-package grapher;
+package processer;
 
 import java.io.File;
 import java.io.FileWriter;

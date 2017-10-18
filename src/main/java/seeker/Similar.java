@@ -1,6 +1,6 @@
 package seeker;
 
-class Similar {
+public class Similar {
   
   private int id;
   private double similarity;

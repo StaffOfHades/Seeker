@@ -1,26 +1,25 @@
 package seeker;
 
-import loader.Load;
+import manager.Load;
+import manager.Constants;
 
 public class Main implements Constants {
 
-  public static void main( String[] args ) {
+   public static void main( String[] args ) {
 
-    new Load();
-    /*
-    load.cleanDB();
-    load.loadDocuments( true );
-    load.loadQueries( true );
-    load.addDF();
-    load.addIDF();
-    load.loadRelevant();
-    */
- 
-    //Crea la interfez y muestrala
-    View view = new View();
-    view.setVisible( true );
-
-    if( !Connect.getInstance().checkConnection() )
+      /*
+      load.cleanDB();
+      load.loadDocuments( true );
+      load.loadQueries( true );
+      load.addDF();
+      load.addIDF();
+      load.loadRelevant();
+      */
+      if( !Load.getInstance().checkConnection() )
       System.out.println( FAILURE );
-  }
+   
+      //Crea la interfez y muestrala
+      View view = new View();
+      view.setVisible( true );    
+   }
 }

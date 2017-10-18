@@ -1,4 +1,4 @@
-package grapher;
+package processer;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -19,7 +19,7 @@ import org.jfree.data.xy.XYDataset;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
-public class Graph<E extends Number> extends JFrame{
+public class Graph<E extends Number> extends JFrame {
 
   static final long serialVersionUID = 13L;
 
@@ -32,7 +32,15 @@ public class Graph<E extends Number> extends JFrame{
   /** The Constant FIRST. */
   public static final int FIRST = 0;
 
-  private final static Color[] colors = {Color.BLACK, Color.BLUE, Color.GREEN, Color.RED, Color.CYAN, Color.PINK, Color.ORANGE, Color.MAGENTA, Color.YELLOW };
+
+  private final static Color GREEN =  new Color(0x19, 0x68, 0x11);
+  private final static Color CYAN = new Color(0x0D, 0x51, 0x46);
+  private final static Color PINK = new Color(0x66, 0x11, 0x41);
+  private final static Color ORANGE = new Color(0x86, 0x4C, 0x18);
+  private final static Color PURPLE = new Color(0x5D, 0x2B, 0x74);
+  private final static Color OKER = new Color(0x86, 0x71, 0x18);
+  private final static Color[] COLORS = {Color.BLACK, Color.BLUE, GREEN, Color.RED, CYAN, PINK, ORANGE, PURPLE, OKER  };
+  //private final static Color[] colors = {Color.BLACK, Color.BLUE, Color.GREEN, Color.RED, Color.CYAN, Color.PINK, Color.ORANGE, Color.MAGENTA, Color.YELLOW };
 
   public Graph(
     String appTitle,
@@ -66,7 +74,7 @@ public class Graph<E extends Number> extends JFrame{
     for(int i = 0; i < data.size(); i++) {
       renderer.setSeriesPaint(
         i,
-        colors[i % colors.length]
+        COLORS[i % COLORS.length]
       );
       final float[] dash = {10.0f};
       renderer.setSeriesStroke(
@@ -115,12 +123,12 @@ public class Graph<E extends Number> extends JFrame{
   private void shuffleColor() {
     int index;
     final Random random = new Random();
-    for (int i = colors.length - 1; i > 0; i--) {
+    for (int i = COLORS.length - 1; i > 0; i--) {
         index = random.nextInt(i + 1);
         if (index != i) {
-          final Color temp = colors[index];
-          colors[index] = colors[i];
-          colors[i] = temp;
+          final Color temp = COLORS[index];
+          COLORS[index] = COLORS[i];
+          COLORS[i] = temp;
         }
     }
   }
