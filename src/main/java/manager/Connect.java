@@ -265,9 +265,9 @@ public class Connect implements Constants {
    // Return a list of all documents with a similarity
    // in order descending for a given idquery
    // after calculating query1 using Rocchio weights.
-   public List<Similar> getSimilarityQ1( int idquery ) {
+   public List<Similar> getSimilarityQ1( int idquery, List<Similar> similars ) {
       
-      List<Similar> similars = null;
+      List<Similar> similarsQ1 = null;
       // Open connection to Database && Run query.
       try {
 
@@ -287,64 +287,105 @@ public class Connect implements Constants {
          );
 
          // Drop table `temp` if exists.
-         String sqlQuery = "drop table if exists `temp`;";
+         List<Similar> n1 = similars.subList( 0, N1 );
+         List<Similar> n2 = similars.subList( similars.size() - N2, similars.size() );
+         
+         // Drop table `n1` if exists.
+         String sqlQuery = "drop table if exists `n1`;";
          PreparedStatement statement = connection.prepareStatement( sqlQuery );
          statement.executeQuery();
 
-         // Add table `temp` if not exists.
-         sqlQuery = "CREATE TEMPORARY TABLE IF NOT EXISTS `temp` (" +
-            "`idquery` int(8) unsigned NOT NULL, " +
-            "`term` varchar(32) NOT NULL, " +
-            "`tf1` double(20,15) unsigned NOT NULL, " +
-            "PRIMARY KEY (`term`) " +
+         // Add table `n1` if not exists.
+         sqlQuery = "CREATE TEMPORARY TABLE IF NOT EXISTS `n1` (" +
+            "`iddoc` int(8) unsigned NOT NULL, " +
+            "PRIMARY KEY (`iddoc`) " +
          ") ENGINE=InnoDB DEFAULT CHARSET=utf8;";
          statement = connection.prepareStatement( sqlQuery );
          statement.executeQuery();
 
-         // SQL Query to generate new tfs using Rochio weights.
+         for( Similar s : n1 ) {
+            sqlQuery = "insert into `n1` (`iddoc`) values(?);";
+            statement = connection.prepareStatement( sqlQuery );
+            statement.setInt( 1, s.getId() );
+            statement.executeQuery();
+         }
+
+         // Drop table `n2` if exists.
+         sqlQuery = "drop table if exists `n2`;";
+         statement = connection.prepareStatement( sqlQuery );
+         statement.executeQuery();
+
+         // Add table `n1` if not exists.
+         sqlQuery = "CREATE TEMPORARY TABLE IF NOT EXISTS `n2` (" +
+            "`iddoc` int(8) unsigned NOT NULL," +
+            "PRIMARY KEY (`iddoc`) " +
+         ") ENGINE=InnoDB DEFAULT CHARSET=utf8;";
+         statement = connection.prepareStatement( sqlQuery );
+         statement.executeQuery();
+
+         for( Similar s : n2 ) {
+            sqlQuery = "insert into `n2` (`iddoc`) values(?);";
+            statement = connection.prepareStatement( sqlQuery );
+            statement.setInt(1, s.getId() );
+            statement.executeQuery();
+         }
+
+          // Drop table `temp` if exists.
+          sqlQuery = "drop table if exists `temp`;";
+          statement = connection.prepareStatement( sqlQuery );
+          statement.executeQuery();
+ 
+          // Add table `temp` if not exists.
+          sqlQuery = "CREATE TEMPORARY TABLE IF NOT EXISTS `temp` (" +
+             "`idquery` int(8) unsigned NOT NULL, " +
+             "`term` varchar(32) NOT NULL, " +
+             "`tf1` double(20,15) unsigned NOT NULL, " +
+             "PRIMARY KEY (`term`) " +
+          ") ENGINE=InnoDB DEFAULT CHARSET=utf8;";
+          statement = connection.prepareStatement( sqlQuery );
+          statement.executeQuery();
+
          sqlQuery =
          "insert into `temp` (`idquery`, `term`,`tf1`) select " +
             "`made`.`idquery`, " +
             "`made`.`term`, " +
-            "`made`.`tf` + 0.8 / " +
-            "(select " +
-               "count(`documents`.`id`) " +
-               "from `documents`, `relevant` " +
-               "where `documents`.`id` = `relevant`.`iddoc` " +
-               "and `relevant`.`idquery` = `made`.`idquery` " +
-            ") * sum(`contains`.`tf`) - 0.1 / " +
-            "(select " +
-               "(select count(`documents`.`id`) " +
-                  "from `documents` " +
-               ") - count(`documents`.`id`) " +
-               "from `documents`, `relevant` " +
-               "where `documents`.`id` = `relevant`.`iddoc` " +
-               "and `relevant`.`idquery` = `made`.`idquery` " +
-            ") * ( " +
-               "(select sum(`contains`.`tf`) " +
-                  "from `contains` " +
+            "? * `made`.`tf` + ? / (select " +
+               "count(`n1`.`iddoc`) " +
+               "from `n1`"  +
+            ") * coalesce(" +
+               "(select " +
+                  "sum(`contains`.`tf`) " +
+                  "from `contains`, `n1` " +
                   "where `contains`.`term` = `made`.`term` " +
-               ") - sum(`contains`.`tf`) " +
+                  "and `contains`.`iddoc` = `n1`.`iddoc`" +
+               "), 0" +
+            ") - ? / (select " +
+               "count(`n2`.`iddoc`) " +
+               "from `n2`"  +
+            ") * coalesce(" +
+               "(select " +
+                  "sum(`contains`.`tf`) " +
+                  "from `contains`, `n2` " +
+                  "where `contains`.`term` = `made`.`term` " +
+                  "and `contains`.`iddoc` = `n2`.`iddoc`" +
+               "), 0" +
             ") as `tf1` " +
-            "from `contains`, `relevant`, `made` " +
-            "where `contains`.`term` = `made`.`term` " +
-            "and `contains`.`iddoc` = `relevant`.`iddoc` " +
-            "and `relevant`.`idquery` = `made`.`idquery` " +
-            "and `made`.`idquery` = ? " +
-            "group by `made`.`term`;";
+            "from `made` " +
+            "where `made`.`idquery` = ?;";
          statement = connection.prepareStatement( sqlQuery );
-         statement.setInt( 1, idquery );
+         statement.setDouble( 1, ALPHA );
+         statement.setDouble( 2, BETA );
+         statement.setDouble( 3, GAMMA );
+         statement.setInt( 4, idquery );
          statement.executeQuery();
 
-         sqlQuery =
-            "update `made` " +
-            "inner join `temp` " +
-            "on `made`.`term` = `temp`.`term` " +
-            "and `made`.`idquery` = `temp`.`idquery` " +
-            "set `made`.`tf1` = `temp`.`tf1`";
+         sqlQuery = "update `temp`, `made` " +
+            "set `temp`.`tf1` = `made`.`tf`" +
+            "where `temp`.`idquery` = `made`.`idquery`" +
+            "and `temp`.`tf1` is null";
          statement = connection.prepareStatement( sqlQuery );
          statement.executeQuery();
-      
+               
          System.out.println( SUCCESS );
          System.out.println(
             DIVIDER +
@@ -353,7 +394,7 @@ public class Connect implements Constants {
             DIVIDER
          );
 
-         similars = new ArrayList<>();
+         similarsQ1 = new ArrayList<>();
 
          // SQL Query to determine similarity using Vector Space Model.
          sqlQuery = 
@@ -384,14 +425,14 @@ public class Connect implements Constants {
                result.getDouble( 2 )
             );
             // Add to list for a more permanent storage.
-            similars.add( similar );
+            similarsQ1.add( similar );
          }
          connection.close();
       } catch( Exception e ) {
 
          e.printStackTrace();
       }
-      return similars;
+      return similarsQ1;
   }
 
    // Return a list of all iddoc that are relevant

@@ -1,325 +1,150 @@
 package seeker;
 
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.EventQueue;
 import java.io.File;
 import java.io.Serializable;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.ArrayList;
-import javax.swing.*;
-import javax.swing.event.*;
 
-import manager.*;
-
-import processer.*;
+import javax.swing.JOptionPane;
+import javax.swing.MenuElement;
+import javax.swing.UIManager;
 
 import org.jfree.ui.RefineryUtilities;
 
-public class View extends JFrame implements Constants {
+import processer.Export;
+import processer.Graph;
 
-   // Constants
-   private final static String TYPEFACE = "Tahoma";
-   private final static int TEXT_TITLE = 36;
-   private final static int TEXT_HEADER = 18;
-   private final static int TEXT_BODY = 14;
-   static final long serialVersionUID = 25L;
+public class View extends AbstractView {
 
-   // View Variables
-   private JCheckBoxMenuItem toggleSearch;
-   private JComboBox<String> querySelector;
-   private JTextArea resultArea;
-   private JTextField queryField;
+   static final long serialVersionUID = 53L;
+   private int currentIndex;
    
-   // Inner Variables
-   private final Connect connect;
-   private List<Similar> similars;
-   private List<Integer> relevants;
-   private List<Double> precision;
-   private List<Double> recall;
-
    public View() {
-
-      connect = Connect.getInstance();
-      similars = new ArrayList<>();
-      relevants = new ArrayList<>();
-      precision = new ArrayList<>();
-      recall = new ArrayList<>();
-      initComponents();
-   }
-
-   private void initComponents() {
-      
-      final JButton searchTerm = new JButton();
-      toggleSearch = new JCheckBoxMenuItem( "Use Relevance Feedback" );
-      querySelector = new JComboBox<>( connect.getQueries() );
-      final JLabel resultLabel = new JLabel();
-      final JLabel titleLabel = new JLabel();
-      final JMenu file = new JMenu( "File" );
-      final JMenu edit = new JMenu( "Edit" );
-      final JMenu graph = new JMenu( "Graph" );
-      final JMenu relevant = new JMenu( "Relevant" );
-      final JMenuBar menuBar = new JMenuBar();
-      final JMenuItem export = new JMenuItem( "Export to CSV" );
-      final JMenuItem exportR = new JMenuItem( "Export (Relevant) to CSV" );
-      final JMenuItem graphRP = new JMenuItem( "Recall & Precision" );
-      final JMenuItem graphRelevantRP = new JMenuItem( "Recall & Precision" );
-      final JMenuItem graphF = new JMenuItem( "F1 & F2" );
-      final JMenuItem graphFR = new JMenuItem( "F1 & F2" );
-      final JMenuItem[] items = {toggleSearch, exportR, graphF, graphRP, relevant};
-      resultArea = new JTextArea();
-      queryField = new JTextField();
-      final JScrollPane scroll = new JScrollPane( resultArea );
-      final GroupLayout layout = new GroupLayout( getContentPane() );
-
-      final ActionListener listener = new ActionListener() {
-
-         @Override
-         public void actionPerformed(ActionEvent e) {
-
-            if( !(e.getSource() instanceof JMenuItem) )
-               return;
-
-            final JMenuItem item = (JMenuItem) e.getSource();
-            if( item == export )
-               exportToCsv();
-            else if( item == exportR )
-               exportRelevantToCsv();
-            else if( item == graphRP )
-               graphPrecisionAndRecall();
-            else if( item == graphRelevantRP )
-               graphRelevantPrecisionAndRecall();
-            else if( item == graphF )
-               graphFMeasure( new int[] {1, 2} );
-            else if( item == graphFR )
-               graphRelevantFMeasure( new int[] {1, 2} );
-         }
-      };
-
-      final Font title = new Font(
-         TYPEFACE,
-         0,
-         TEXT_TITLE
-      );
-
-      final Font header = new Font(
-         TYPEFACE,
-         0,
-         TEXT_HEADER
-      );
-
-      final Font body = new Font(
-         TYPEFACE,
-         0,
-         TEXT_BODY
-      );
-
-
-      toggleSearch.setSelected( false );
-
-      menuBar.add( file );
-      menuBar.add( edit );
-      menuBar.add( graph );
-      file.add( export );
-      file.add( exportR );
-      edit.add( toggleSearch );
-      graph.add( graphF );
-      graph.add( graphRP );
-      graph.add( relevant );
-      relevant.add( graphFR );
-      relevant.add( graphRelevantRP );
-      this.setJMenuBar( menuBar );
-
-      scroll.setVerticalScrollBarPolicy( ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS );
-
-      setDefaultCloseOperation( WindowConstants.EXIT_ON_CLOSE );
-      setTitle( TITLE );
-
-      export.addActionListener( listener );
-      exportR.addActionListener( listener );
-      graphRP.addActionListener( listener );
-      graphRelevantRP.addActionListener( listener );
-      graphF.addActionListener( listener );
-      graphFR.addActionListener( listener );
-
-      titleLabel.setFont( title );
-      titleLabel.setText( "Buscador v.2" );
-
-      queryField.setFont( header );
-
-      searchTerm.setFont( body );
-      searchTerm.setText( "Buscar" );
-      searchTerm.addActionListener(
-         new ActionListener() {
-
-            @Override
-            public void actionPerformed( ActionEvent event ) {
-
-               try {
-                  buscarTerminoActionPerformed( event );
-               } catch ( Exception e ) {
-                  e.printStackTrace();
-               }
-            }
-         }
-      );
-
-      resultArea.setEditable(false);
-      resultArea.setFont( body ); // NOI18N
-
-      resultLabel.setFont( body ); // NOI18N
-      resultLabel.setText( "Documentos Relevantes" );
-
-      querySelector.addActionListener(
-         new ActionListener() {
-         
-            @Override
-            public void actionPerformed(ActionEvent e) {
-
-               if( querySelector.getSelectedIndex() > 0 ) {
-
-                  queryField.setText("");
-                  setMenuEnabled(items, true);
-               }
-            }
-         }
-      );
-
-      queryField.getDocument().addDocumentListener(
-         new DocumentListener() {
-         
-            @Override
-            public void removeUpdate(DocumentEvent e) {
-
-               if( queryField.getText().trim().length() >  0 )
-                  disableMenu( items );
-            }
-         
-            @Override
-            public void insertUpdate(DocumentEvent e) {
-
-               if( queryField.getText().trim().length() >  0 )
-                  disableMenu( items );
-            }
-         
-            @Override
-            public void changedUpdate(DocumentEvent e) {
-               
-               if( queryField.getText().trim().length() >  0 )
-                  disableMenu( items );
-            }
-         }
-      );
-
-      getContentPane().setLayout(layout);
-      layout.setHorizontalGroup(
-         layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-            .addGroup(
-               GroupLayout.Alignment.TRAILING,
-               layout.createSequentialGroup()
-                  .addGap(20, 20, 20)
-                  .addGroup(
-                     layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                        .addGroup(
-                           GroupLayout.Alignment.TRAILING,
-                           layout.createSequentialGroup()
-                              .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 81, GroupLayout.PREFERRED_SIZE)
-                              .addComponent(titleLabel)
-                              .addGap(72, 72, 72)
-                        ).addComponent(querySelector, GroupLayout.PREFERRED_SIZE, 359, GroupLayout.PREFERRED_SIZE)
-                        .addComponent(queryField, GroupLayout.PREFERRED_SIZE, 359, GroupLayout.PREFERRED_SIZE)
-                        .addGroup(
-                           layout.createSequentialGroup()
-                              .addGap(145, 145, 145)
-                              .addComponent(searchTerm)
-                        )
-                  ).addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 16, Short.MAX_VALUE)
-                  .addGroup(
-                     layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                        .addComponent(resultLabel, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-                        .addComponent(scroll, GroupLayout.PREFERRED_SIZE, 141, GroupLayout.PREFERRED_SIZE)
-                  ).addGap(70, 70, 70)
-            )
-      );
-      layout.setVerticalGroup(
-         layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-            .addGroup(
-               layout.createSequentialGroup()
-                  .addGap(30, 30, 30)
-                  .addGroup(
-                     layout.createParallelGroup(GroupLayout.Alignment.TRAILING)
-                        .addGroup(
-                           layout.createSequentialGroup()
-                              .addComponent(titleLabel)
-                              .addGap(38, 38, 38)
-                              .addComponent(querySelector, GroupLayout.PREFERRED_SIZE, 31, GroupLayout.PREFERRED_SIZE)
-                              .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
-                              .addComponent(queryField, GroupLayout.PREFERRED_SIZE, 31, GroupLayout.PREFERRED_SIZE)
-                              .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
-                              .addComponent(searchTerm)
-                              .addGap(25, 25, 25)
-                        ).addGroup(
-                           layout.createSequentialGroup()
-                              .addComponent(resultLabel, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-                              .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                              .addComponent(scroll, GroupLayout.PREFERRED_SIZE, 186, GroupLayout.PREFERRED_SIZE)
-                        )
-                  ).addContainerGap(29, Short.MAX_VALUE)
-            )
-      );
-      
-      titleLabel.getAccessibleContext().setAccessibleName("titleLabel");
-
-      pack();
-   }
-
-   private void setMenuEnabled( final JMenuItem[] items, boolean enabled ) {
-      for(JMenuItem item : items)
-         item.setEnabled(enabled);
-   }
-
-   private void disableMenu( final JMenuItem[] items ) {
-
-      querySelector.setSelectedIndex( 0 );
-      toggleSearch.setSelected( false );
-      setMenuEnabled(items, false);
+      super();
    }
 
    // Search for term in collection, and return relevant documents in order.
-   private void buscarTerminoActionPerformed( ActionEvent event ) throws Exception {
+   @Override
+   protected void buscarTermino() throws Exception {
 
       // Retrieve query from textfield,
       final String query = queryField.getText();
-      final DecimalFormat format = new DecimalFormat("#0.00");
 
       int idquery;
       // If its a user query, add it to db and get its id;
       // Otherwise, just find the idquery;
       if( query.trim().length() > 0 )
          idquery = connect.addQuery( query );
-      else if ( querySelector.getSelectedIndex() > 0 ) {
-
+      else if ( querySelector.getSelectedIndex() > 0 )
          idquery = querySelector.getSelectedIndex();
-         System.out.println( "Query: \"" + querySelector.getSelectedItem()  + "\"");
-      } else {
-         
+      else {
+                  
          JOptionPane.showMessageDialog( this, "Please select a query or add your own" );
          return;
       }
 
       if( idquery == -1 )
          throw new Exception( "An idquery was uncessfuly found or created" );
-
+      
       // Get similarity for a given idquery
-      similars = toggleSearch.isSelected() ?
-         connect.getSimilarityQ1( idquery ) :
-         connect.getSimilarity( idquery );
+      List<Similar> similars = connect.getSimilarity( idquery );
+      if( toggleSearch.isSelected() )
+            similars = connect.getSimilarityQ1( idquery, similars );
 
       if( similars == null )
          throw new Exception( "An error occured when getting similarity list" );
       
+      List<Double> precision = new ArrayList<>();
+      List<Double> recall = new ArrayList<>();
+
+      // Get relevant documents
+      List<Integer> relevants = connect.getRelevants( idquery );
+
+      if( relevants == null )
+         throw new Exception( "An error occured when getting relevants list" );
+      
+      // Only try to find precision and recall if there are relevant documents;
+      if( relevants.size() > 0 ) {
+         
+         int counter = 1;
+         int found = 0;
+         final int correct = relevants.size();
+         
+         // Iterate over all relevant documents,
+         for( Similar pair : similars ) {
+            
+            found += relevants.contains( pair.getId() ) ? 1 : 0;
+            final double p = (double) found / counter; 
+            final double r = (double) found / correct;
+            precision.add( p );
+            recall.add( r );
+
+            // Increment counter
+            counter++;
+         }
+         System.out.println(
+            "\nDocuments retrieved: " +
+            counter +
+            ", of which " +
+            found +
+            " where relevant"
+         );
+      }
+      System.out.println( DIVIDER + "End" + DIVIDER + "\n" );
+      if( similarsHistory.size() > 5)
+         similarsHistory.removeFirst();         
+      similarsHistory.add( similars );
+
+      if( relevantsHistory.size() > 5)
+         relevantsHistory.removeFirst();         
+      relevantsHistory.add( relevants );
+
+      if( recallHistory.size() > 5)
+         recallHistory.removeFirst();
+      recallHistory.add( recall );
+
+      if( precisionHistory.size() > 5)
+         precisionHistory.removeFirst();         
+      precisionHistory.add( precision );
+
+      if( idHistory.size() > 5 )
+         idHistory.removeFirst();
+      final String text = idquery + ( toggleSearch.isSelected() ? " w/ Feedback" : "" ) ;
+      idHistory.add( text );
+      currentIndex = idHistory.indexOf( text );
+
+      if( feedbackHistory.size() > 5 )
+         feedbackHistory.removeFirst();
+      feedbackHistory.add( toggleSearch.isSelected() );
+     
+      updateHistory();
+      showResults();
+   }
+
+   private void showResults() {
+      showResults( idHistory.get( currentIndex ) );
+   }
+
+   @Override
+   protected void showResults( String idquery ) {
+
+      currentIndex = idHistory.indexOf( idquery );
+      if( currentIndex < 0 )
+         return;
+      final int id = Integer.parseInt( idquery.split( "\\s+" )[0] );
+      querySelector.setSelectedIndex( id );
+
+      final List<Similar> similars = similarsHistory.get( currentIndex );
+      final List<Integer> relevants = relevantsHistory.get( currentIndex );
+      final List<Double> precision = precisionHistory.get( currentIndex );
+      final List<Double> recall = recallHistory.get( currentIndex );
+      
+      System.out.println( "Query: \"" + querySelector.getSelectedItem()  + "\"");
+
       System.out.println(
          DIVIDER +
          "First 100 Similar Documents" +
@@ -327,11 +152,6 @@ public class View extends JFrame implements Constants {
       );
 
       resultArea.setText( "" );
-      precision = new ArrayList<>();
-      recall = new ArrayList<>();
-
-      // Get relevant documents
-      relevants = connect.getRelevants( idquery );
 
       // Iterate over the first 100 documents found
       String text = "";
@@ -357,250 +177,499 @@ public class View extends JFrame implements Constants {
 
       // Scroll back to top of text area
       resultArea.setCaretPosition( 0 );
-
-      if( similars == null )
-         throw new Exception( "An error occured when getting similarity list" );
       
-      // Only try to find precision and recall if there are relevant documents;
+      final DecimalFormat format = new DecimalFormat("#0.00");
+
       if( relevants.size() > 0 ) {
-         
-         int counter = 1;
-         int found = 0;
-         final int max = similars.size();
-         final int correct = relevants.size();
+
          System.out.println(
             DIVIDER +
             "Precision & Recall" +
             DIVIDER
          );
+      }
 
-         // Iterate over all relevant documents,
-         for( Similar pair : similars ) {
-            
-            found += relevants.contains( pair.getId() ) ? 1 : 0;
-            final double p = (double) found / counter; 
-            final double r = (double) found / correct;
-            precision.add( p );
-            recall.add( r );
+      for(  int i = 0;
+            i < 100 && i < recall.size() && i < precision.size() && i < similars.size();
+            i++
+      ) {
 
-            // Print the first 100 calculated values.
-            if( counter <= 100 ) {
-
-               System.out.println(
-                  "Documento #" +
-                  pair.getId() +
-                  ": Precision: " +
-                  format.format( 100 * p ) +
-                  "%; Recall: " +
-                  format.format( 100 * r ) +
-                  "%;"
-               );
-            }
-
-            // Increment counter
-            counter++;
-         }
          System.out.println(
-            "\nDocuments retrieved: " +
-            counter +
-            ", of which " +
-            found +
-            " where relevant"
+            "Documento #" +
+            similars.get( i ).getId() +
+            ": Precision: " +
+            format.format( 100 * precision.get( i ) ) +
+            "%; Recall: " +
+            format.format( 100 * recall.get( i ) ) +
+            "%;"
          );
       }
+      System.out.println( DIVIDER + "End" + DIVIDER + "\n" );
    }
 
-   private void graph( Map<String, List<Double>> map, String heading, String xLabel ) {
-
-      String title = heading + " (Query #" + querySelector.getSelectedIndex();
-      if( toggleSearch.isSelected() )
-         title += " w/ Relevance Feedback";
-      title += ")";
+   private void graph(
+      Map<String, List<Double>> map,
+      String title,
+      String xLabel
+   ) {    
       final Graph<Double> graph = new Graph<>("Grafica", title, xLabel, map);
-      graph.pack();
+      graph.pack();      
       RefineryUtilities.centerFrameOnScreen( graph );          
       graph.setVisible( true );
    }
 
-   private void graphPrecisionAndRecall(
-      List<Double> precision,
-      List<Double> recall,
-      String xLabel
-   ) {
-      if( recall.size() <= 0 || precision.size() <= 0) {
+   private void graphPrecisionAndRecall( int[] indeces, boolean onlyRelevant ) {
 
-         JOptionPane.showMessageDialog( this, "A default query must be made" );
-         return;
-      }
+      final Map<String, List<Double>> data =
+         new HashMap<String, List<Double>>();
 
-      final Map<String, List<Double>> map = new HashMap<String, List<Double>>();
-      map.put("Precision", precision);
-      map.put("Recall", recall);
-      graph( map, "Recall vs Precision", xLabel );
-      
-   }
+      for( int index : indeces ) {
 
-   private void graphPrecisionAndRecall() {
-      graphPrecisionAndRecall( precision, recall, "Documents (#)" );
-   }
+         final int idquery = Integer.parseInt( idHistory.get( index ).split("\\s+")[0] );
+         String title = "";
+         if( indeces.length > 1 )
+            title = " - Query" + idquery;
 
-   private void graphRelevantPrecisionAndRecall() {
+         final List<Similar> similars = similarsHistory.get( index );
+         final List<Integer> relevants = relevantsHistory.get( index );
+         final List<Double> precision = precisionHistory.get( index );
+         final List<Double> recall = recallHistory.get( index );
+                  
+         final List<Double> precisionR = new ArrayList<>();
+         final List<Double> recallR = new ArrayList<>();
+         for( int i = 0; i < similars.size() && i < precision.size() && i < recall.size(); i++ ) {
 
-      if( recall.size() <= 0 || precision.size() <= 0) {
+            final Similar s = similars.get( i );
 
-         JOptionPane.showMessageDialog( this, "A default query must be made" );
-         return;
-      }
-
-      final List<Double> precisionR = new ArrayList<>();
-      final List<Double> recallR = new ArrayList<>();
-      for( int i = 0; i < similars.size() && i < precision.size() && i < recall.size(); i++ ) {
-
-         final int id = similars.get( i ).getId();
-         final double p = precision.get( i );
-         final double r = recall.get( i );
-         if( relevants.contains( id ) ) {
-
-            precisionR.add( p );
-            recallR.add( r );
+            if( !onlyRelevant || relevants.contains( s.getId() ) ) {
+                              
+               precisionR.add( precision.get( i ) );
+               recallR.add( recall.get( i ) );
+            }
          }
+                 
+         data.put( "Precision" + title, precisionR);        
+         data.put( "Recall" + title, recallR);
       }
-      graphPrecisionAndRecall( precisionR, recallR, "Relevant (#)" );
+
+      String title = "Comparison of Recall vs Precision";
+      if( indeces.length == 1 ) {
+         
+         final int idquery = Integer.parseInt( idHistory.get( 0 ).split("\\s+")[0] );
+         title += " (Query #" + idquery;
+         if( feedbackHistory.get( 0 ) )
+            title += " w/ Relevance Feedback";
+         title += ")";
+      } else {
+
+         title += " (Query ";
+         for(int index : indeces) {
+            
+            final int idquery = Integer.parseInt( idHistory.get( index ).split("\\s+")[0] );
+            title += "#" + idquery;
+            if( feedbackHistory.get( index ) )
+               title += " w/ RF";
+            title += " vs ";
+         }
+         title = title.substring( title.length() - 4, title.length() );
+         title += ")";
+      }
+
+      String xLabel = onlyRelevant ? "Relevants (#)" : "Documents (#)";
+
+      graph(
+         data,
+         title,
+         xLabel
+      );
    }
 
-   private void graphFMeasure(
-      int[] graphemes,
-      List<Double> precision,
-      List<Double> recall,
-      String xLabel
-   ) {
+   @Override
+   protected void graphPrecisionAndRecall() {
       
-      if( recall.size() <= 0 || precision.size() <= 0) {
+      boolean checked = false;
+      for( MenuElement element : compare.getSubElements() )
+         if( !checked && element instanceof JSelectorMenuItem )
+            checked = ( (JSelectorMenuItem) element).isSelected();
 
-         JOptionPane.showMessageDialog( this, "A default query must be made" );
-         return;
+      int[] indeces = new int[0]; 
+      if( !checked ) {
+
+         if( similarsHistory.size() <= 0 ) {
+
+            JOptionPane.showMessageDialog( this, "A query must be made first" );
+            return;
+         }
+         indeces = new int[] { currentIndex };
+      } else {
+
+         MenuElement[] elements = compare.getSubElements(); 
+         List<Integer> ids = new ArrayList<>();
+         for( int i = 0; i < elements.length; i++ ) {
+
+            if( elements[i] instanceof JSelectorMenuItem ) {
+
+               final JSelectorMenuItem item = (JSelectorMenuItem )elements[i];
+               if( item.isSelected() )
+                  ids.add( i );
+            }
+         }
+         indeces = ids.stream().mapToInt( i -> i).toArray();
       }
+      
+      if( indeces.length > 0 ) {
 
-      final Map<String, List<Double>> map = new HashMap<String, List<Double>>();
-      for( int grapheme : graphemes ) {
+         graphPrecisionAndRecall( indeces, false );
+      } else
+         System.err.println( "Nothing to graph" );
+   }
+
+   @Override
+   protected void graphRelevantPrecisionAndRecall() {
+      boolean checked = false;
+      for( MenuElement element : compare.getSubElements() )
+         if( !checked && element instanceof JSelectorMenuItem )
+            checked = ( (JSelectorMenuItem) element).isSelected();
+
+      int[] indeces = new int[0]; 
+      if( !checked ) {
+
+         if( recallHistory.get( currentIndex ).size() <= 0 ||
+            precisionHistory.get( currentIndex ).size() <= 0 ) {
+
+            JOptionPane.showMessageDialog( this, "A default query must be made" );
+            return;
+         }
+        
+         indeces = new int[] { currentIndex };
+      } else {
+
+         MenuElement[] elements = compare.getSubElements(); 
+         List<Integer> ids = new ArrayList<>();
+         for( int i = 0; i < elements.length; i++ ) {
+
+            if( elements[i] instanceof JSelectorMenuItem ) {
+
+               final JSelectorMenuItem item = (JSelectorMenuItem )elements[i];
+               if( item.isSelected() ) {
+
+                  final int index = idHistory.indexOf( item.getText() );
+                  if( currentIndex >= 0 && relevantsHistory.get( index ).size() > 0 )
+                     ids.add( i );
+                  else if( currentIndex >= 0 )
+                     System.err.println( "Selected id query has no relevant documents" );
+               }
+            }
+         }
+         indeces = ids.stream().mapToInt( i -> i).toArray();
+      }
+      if( indeces.length > 0 ) {
+         graphPrecisionAndRecall( indeces, true );
+      } else
+         System.err.println( "Nothing to graph" );
+   }
+
+   private void graphFMeasure( double grapheme, int[] indeces, boolean onlyRelevant ) {
+
+      final Map<String, List<Double>> data =
+         new HashMap<String, List<Double>>();
+
+      for( int index : indeces ) {
+         
+         final int idquery = Integer.parseInt( idHistory.get( index ).split("\\s+")[0] );
+         String title = "F" + grapheme;
+         if( indeces.length > 1 )
+            title += "-Query " + idquery;
+
+         final List<Similar> similars = similarsHistory.get( index );
+         final List<Integer> relevants = relevantsHistory.get( index );
+         final List<Double> precision = precisionHistory.get( index );
+         final List<Double> recall = recallHistory.get( index );
 
          final double graphemePow2 = grapheme * grapheme;
-         final List<Double> fn = new ArrayList<>();
-         for( int i = 0; i < recall.size() && i < precision.size(); i++ ) {
+         final List<Double> fm = new ArrayList<>();
+         for( int i = 0; i < similars.size() && i < precision.size() && i < recall.size(); i++ ) {
 
-            final double p = precision.get( i );
-            final double r = recall.get( i );
-            fn.add( ( 1 + graphemePow2 ) * ( p * r ) / ( graphemePow2 * p + r ) );
+            final Similar s = similars.get( i );
+
+            if( !onlyRelevant || relevants.contains( s.getId() ) ) {
+               
+               final double p = precision.get( i );
+               final double r = recall.get( i );
+               fm.add( ( 1 + graphemePow2 ) * ( p * r ) / ( graphemePow2 * p + r ) );
+            }
          }
-         map.put( "F" + grapheme, fn );
+         data.put( title, fm );
       }
-      graph( map, "F Measure Comparison", xLabel );
-   }
+      String title = "";
+      if ( indeces.length > 1 )
+         title += "Comparison of ";
 
-   private void graphFMeasure( int[] graphemes ) {
-      graphFMeasure( graphemes, precision, recall, "Documents (#)" );
-   }
+      title += "F" + grapheme + " Measure";
+      if( indeces.length == 1 ) {
+         
+         final int idquery = Integer.parseInt( idHistory.get( 0 ).split("\\s+")[0] );
+         title += " (Query #" + idquery;
+         if( feedbackHistory.get( 0 ) )
+            title += " w/ Relevance Feedback";
+         title += ")";
+      } else {
 
-   private void graphRelevantFMeasure( int[] graphemes ) {
-
-      if( recall.size() <= 0 || precision.size() <= 0) {
-
-         JOptionPane.showMessageDialog( this, "A default query must be made" );
-         return;
-      }
-
-      final List<Double> precisionR = new ArrayList<>();
-      final List<Double> recallR = new ArrayList<>();
-      for( int i = 0; i < similars.size() && i < precision.size() && i < recall.size(); i++ ) {
-
-         final int id = similars.get( i ).getId();
-         final double p = precision.get( i );
-         final double r = recall.get( i );
-         if( relevants.contains( id ) ) {
-
-            precisionR.add( p );
-            recallR.add( r );
+         title += " (Query ";
+         for(int index : indeces) {
+            
+            final int idquery = Integer.parseInt( idHistory.get( index ).split("\\s+")[0] );
+            title += "#" + idquery;
+            if( feedbackHistory.get( index ) )
+               title += " w/ RF";
+            title += " vs ";
          }
+         title = title.substring( title.length() - 4, title.length() );
+         title += ")";
       }
-      graphFMeasure( graphemes, precisionR, recallR, "Relevant (#)" );
+
+      String xLabel = onlyRelevant ? "Relevants (#)" : "Documents (#)";
+
+      graph(
+         data,
+         title,
+         xLabel
+      );
    }
 
-   private void exportToCsv() {
+   @Override
+   protected void graphFMeasure( double grapheme ) {
 
-      if( similars.size() <= 0 ) {
+      boolean checked = false;
+      for( MenuElement element : compare.getSubElements() )
+         if( !checked && element instanceof JSelectorMenuItem )
+            checked = ( (JSelectorMenuItem) element).isSelected();
 
-         JOptionPane.showMessageDialog( this, "A query must be made first" );
-         return;
+      int[] indeces = new int[0]; 
+      if( !checked ) {
+
+         if( similarsHistory.size() <= 0 ) {
+
+            JOptionPane.showMessageDialog( this, "A query must be made first" );
+            return;
+         }
+         indeces = new int[] { currentIndex };
+      } else {
+
+         MenuElement[] elements = compare.getSubElements(); 
+         List<Integer> ids = new ArrayList<>();
+         for( int i = 0; i < elements.length; i++ ) {
+
+            if( elements[i] instanceof JSelectorMenuItem ) {
+
+               final JSelectorMenuItem item = (JSelectorMenuItem )elements[i];
+               if( item.isSelected() )
+                  ids.add( i );
+            }
+         }
+         indeces = ids.stream().mapToInt( i -> i).toArray();
       }
+      
+      if( indeces.length > 0 ) {
 
-      final List<Integer> ids = new ArrayList<>();
-      final List<Double> similarities = new ArrayList<>();
-      for( Similar pair : similars ) {
-         ids.add( pair.getId() );
-         similarities.add( pair.getSimilarity() );
+         graphFMeasure( grapheme, indeces, false );
+      } else
+         System.err.println( "Nothing to graph" );
+   }
+
+   @Override
+   protected void graphRelevantFMeasure( double grapheme ) {
+
+      boolean checked = false;
+      for( MenuElement element : compare.getSubElements() )
+         if( !checked && element instanceof JSelectorMenuItem )
+            checked = ( (JSelectorMenuItem) element).isSelected();
+
+      int[] indeces = new int[0]; 
+      if( !checked ) {
+
+         if( recallHistory.get( currentIndex ).size() <= 0 ||
+            precisionHistory.get( currentIndex ).size() <= 0 ) {
+
+            JOptionPane.showMessageDialog( this, "A default query must be made" );
+            return;
+         }
+        
+         indeces = new int[] { currentIndex };
+      } else {
+
+         MenuElement[] elements = compare.getSubElements(); 
+         List<Integer> ids = new ArrayList<>();
+         for( int i = 0; i < elements.length; i++ ) {
+
+            if( elements[i] instanceof JSelectorMenuItem ) {
+
+               final JSelectorMenuItem item = (JSelectorMenuItem )elements[i];
+               if( item.isSelected() ) {
+
+                  final int index = idHistory.indexOf( item.getText() );
+                  if( index >= 0 && relevantsHistory.get( index ).size() > 0 )
+                     ids.add( i );
+                  else if( index >= 0 )
+                     System.err.println( "Selected id query has no relevant documents" );
+               }
+            }
+         }
+         indeces = ids.stream().mapToInt( i -> i).toArray();
       }
-      final Map<String, List<? extends Serializable>> csv =
-         new HashMap<String, List<? extends Serializable>>();
+      if( indeces.length > 0 ) {
+         graphFMeasure( grapheme, indeces, true );
+      } else
+         System.err.println( "Nothing to graph" );
+   }
 
-
-      if( relevants.size() > 0 ) {
-
-         final List<Character> isRelevant = new ArrayList<>();
-         for( int id : ids )
-            isRelevant.add( relevants.contains(id) ? 'R' : 'N' );
-
-         csv.put("Relevant", isRelevant);
-      }
-
-      csv.put("Id", ids);
-      if( precision.size() > 0 )
-         csv.put("Precision", precision);
-      if( recall.size() > 0 )
-         csv.put("Recall", recall);
-      csv.put("Similarity", similarities);
-
+   private void exportCsv(
+      Map<String, Map<String, List<? extends Serializable>>> csv ) {
+         
       final Export export = new Export();
-      export.exportToCSV(csv, new File(PATH + "/processer/data.csv"));
-      System.out.println( "Sucessfully exported all Documents to CSV" );
+
+      for( String name: csv.keySet() ) {
+
+         export.exportToCSV(
+            csv.get( name ),
+            new File( PATH + "/processer/" + name )
+         );
+      }             
    }
 
-   private void exportRelevantToCsv() {
+   private void exportToCsv( int[] indeces, boolean onlyRelevant ) {
 
-      if( recall.size() <= 0 || precision.size() <= 0) {
+      final Map<String, Map<String, List<? extends Serializable>>> csv =
+         new HashMap<String, Map<String, List<? extends Serializable>>>();
 
-         JOptionPane.showMessageDialog( this, "A default query must be made" );
-         return;
-      }
+      for(int index : indeces) {
 
-      final List<Integer> idsR = new ArrayList<>();
-      final List<Double> similaritiesR = new ArrayList<>();
-      final List<Double> precisionR = new ArrayList<>();
-      final List<Double> recallR = new ArrayList<>();
-      for( int i = 0; i < similars.size() && i < precision.size() && i < recall.size(); i++ ) {
-         final int id = similars.get( i ).getId();
-         final double s = similars.get( i ).getSimilarity();
-         final double p = precision.get( i );
-         final double r = recall.get( i );
-         if( relevants.contains( id ) ) {
-            idsR.add( id );
-            similaritiesR.add( s );
-            precisionR.add( p );
-            recallR.add( r );
+         final int idquery = Integer.parseInt( idHistory.get( index ).split("\\s+")[0] );
+         final List<Similar> similars = similarsHistory.get( index );
+         final List<Integer> relevants = relevantsHistory.get( index );
+         final List<Double> precision = precisionHistory.get( index );
+         final List<Double> recall = recallHistory.get( index );
+
+         final List<Integer> idsR = new ArrayList<>();
+         final List<Double> similaritiesR = new ArrayList<>() ;
+         final List<Double> precisionR = new ArrayList<>();
+         final List<Double> recallR = new ArrayList<>();
+         for( int i = 0; i < similars.size() && i < precision.size() && i < recall.size(); i++ ) {
+
+            final Similar s = similars.get( i );
+
+            if( !onlyRelevant || relevants.contains( s.getId() ) ) {
+
+               idsR.add( s.getId() );
+               similaritiesR.add( s.getSimilarity() );
+               precisionR.add( precision.get( i ) );
+               recallR.add( recall.get( i ) );
+            }
          }
+         final Map<String, List<? extends Serializable>> table =
+            new HashMap<String, List<? extends Serializable>>();
+   
+         table.put( "Id", idsR );
+         table.put("Precision", precisionR);        
+         table.put("Recall", recallR);
+         table.put("Similarity", similaritiesR);
+         String title = "relevant-" + idquery;
+         if( feedbackHistory.get( index ) )
+            title += "-feedback";
+         title += ".csv";
+         csv.put( title, table);
       }
-      final Map<String, List<? extends Serializable>> csv =
-         new HashMap<String, List<? extends Serializable>>();
+      exportCsv( csv );
+   }
+  
 
-      csv.put("Id", idsR);
-      if( precision.size() > 0 )
-         csv.put("Precision", precisionR);
-      if( recall.size() > 0 )
-         csv.put("Recall", recallR);
-      csv.put("Similarity", similaritiesR);
+   @Override
+   protected void exportToCsv() {
 
-      final Export export = new Export();
-      export.exportToCSV(csv, new File(PATH + "/processer/relevant.csv"));
-      System.out.println( "Sucessfully exported Relevant Documents to CSV" );
+      boolean checked = false;
+      for( MenuElement element : compare.getSubElements() )
+         if( !checked && element instanceof JSelectorMenuItem )
+            checked = ( (JSelectorMenuItem) element).isSelected();
+
+      int[] indeces = new int[0]; 
+      if( !checked ) {
+
+         if( similarsHistory.size() <= 0 ) {
+
+            JOptionPane.showMessageDialog( this, "A query must be made first" );
+            return;
+         }
+         indeces = new int[] { currentIndex };
+      } else {
+
+         MenuElement[] elements = compare.getSubElements(); 
+         List<Integer> ids = new ArrayList<>();
+         for( int i = 0; i < elements.length; i++ ) {
+
+            if( elements[i] instanceof JSelectorMenuItem ) {
+
+               final JSelectorMenuItem item = (JSelectorMenuItem )elements[i];
+               if( item.isSelected() )
+                  ids.add( i );
+            }
+         }
+         indeces = ids.stream().mapToInt( i -> i).toArray();
+      }
+      
+      if( indeces.length > 0 ) {
+
+         exportToCsv( indeces, false );
+         System.out.println( "Sucessfully exported all Documents to CSV" );
+      } else
+         System.err.println( "Nothing to exported" );
+   }
+   
+   @Override
+   protected void exportRelevantToCsv() {
+
+      boolean checked = false;
+      for( MenuElement element : compare.getSubElements() )
+         if( !checked && element instanceof JSelectorMenuItem )
+            checked = ( (JSelectorMenuItem) element).isSelected();
+
+      int[] indeces = new int[0]; 
+      if( !checked ) {
+
+         if( recallHistory.get( currentIndex ).size() <= 0 ||
+            precisionHistory.get( currentIndex ).size() <= 0 ) {
+
+            JOptionPane.showMessageDialog( this, "A default query must be made" );
+            return;
+         }
+        
+         indeces = new int[] { currentIndex };
+      } else {
+
+         MenuElement[] elements = compare.getSubElements(); 
+         List<Integer> ids = new ArrayList<>();
+         for( int i = 0; i < elements.length; i++ ) {
+
+            if( elements[i] instanceof JSelectorMenuItem ) {
+
+               final JSelectorMenuItem item = (JSelectorMenuItem )elements[i];
+               if( item.isSelected() ) {
+
+                  final int index = idHistory.indexOf( item.getText() );
+                  if( index >= 0 && relevantsHistory.get( index ).size() > 0 )
+                     ids.add( i );
+                  else if( index >= 0 )
+                     System.err.println( "Selected id query has no relevant documents" );
+               }
+            }
+         }
+         indeces = ids.stream().mapToInt( i -> i).toArray();
+      }
+      if( indeces.length > 0 ) {
+
+         exportToCsv( indeces, true );
+         System.out.println( "Sucessfully exported Relevant Documents to CSV" );
+      } else
+         System.err.println( "Nothing to exported" );
    }
 
    /**
@@ -634,3 +703,46 @@ public class View extends JFrame implements Constants {
       );
    }
 }
+
+
+/*
+
+CREATE TEMPORARY TABLE IF NOT EXISTS `n1` (`iddoc` int(8) unsigned NOT NULL,PRIMARY KEY (`iddoc`) ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+CREATE TEMPORARY TABLE IF NOT EXISTS `n2` (`iddoc` int(8) unsigned NOT NULL,PRIMARY KEY (`iddoc`) ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+insert into `n1`(`iddoc`) values
+(3960),
+(4136),
+(4165),
+(4341),
+(5486),
+(5639),
+(5775),
+(6967),
+(6990),
+(8891);
+insert into `n2`(`iddoc`) values
+(850),
+(943),
+(1049),
+(1167),
+(1809),
+(1909),
+(2283),
+(2515),
+(2733),
+(2830);
+
+select * from `n1`;
+select * from `n2`;
+select count(`n1`.`iddoc`) from `n1`;
+select `contains`.`term`, sum(`contains`.`tf`) from `made`, `contains`, `n1` where `contains`.`term` = `made`.`term` and `contains`.`iddoc` = `n1`.`iddoc` and `made`.`idquery` = 2 group by `made`.`term`;
+select count(`n2`.`iddoc`) from `n2`;
+select `contains`.`term`, sum(`contains`.`tf`) from `made`, `contains`, `n2` where `contains`.`term` = `made`.`term` and `contains`.`iddoc` = `n2`.`iddoc` and `made`.`idquery` = 2;
+
+select `made`.`idquery`, `made`.`term`, 1 * `made`.`tf` + 0.8 / (select count(`n1`.`iddoc`) from `n1`) * coalesce((select sum(`contains`.`tf`) from `contains`, `n1` where `contains`.`term` = `made`.`term` and `contains`.`iddoc` = `n1`.`iddoc`), 0) - 0.1 / (select count(`n2`.`iddoc`) from `n2`) * coalesce((select sum(`contains`.`tf`) from `contains`, `n2` where `contains`.`term` = `made`.`term` and `contains`.`iddoc` = `n2`.`iddoc`), 0) as `tf1` from `made` where `idquery` = 2;
+
+drop table if exists `n1`;
+drop table if exists `n2`;
+
+*/
