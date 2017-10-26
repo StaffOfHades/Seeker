@@ -2,11 +2,12 @@ package manager;
 
 public interface Constants {
 
-   int N1 = 100;
-   int N2 = 10;
    double ALPHA = 1;
    double BETA = 0.8;
    double GAMMA = 0.1;
+   int MAX_DOC = 10;
+   int N1 = 100;
+   int N2 = 10;
    String CONTAINS = "`contains`";
    String DB =
       "jdbc:mariadb://localhost:3306/information_retrieval?user=root";

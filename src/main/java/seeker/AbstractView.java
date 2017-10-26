@@ -50,6 +50,7 @@ public abstract class AbstractView extends JFrame implements Constants {
    private JMenu history;
    private JMenuItem clearHistory;
    private JMenuItem noHistory;
+   private JMenuItem resetCompare;
    
    // Inner Variables
    protected final Connect connect;
@@ -106,6 +107,7 @@ public abstract class AbstractView extends JFrame implements Constants {
       final JMenuItem graphF = new JMenuItem( "F-Measure" );
       final JMenuItem graphFR = new JMenuItem( "F-Measure" );
       noHistory = new JMenuItem( "No Search History" );
+      resetCompare = new JMenuItem( "Reset" );
       final JMenuItem[] items = {toggleSearch, exportR, graphF, graphRP, relevant};
       resultArea = new JTextArea();
       queryField = new JTextField();
@@ -137,7 +139,9 @@ public abstract class AbstractView extends JFrame implements Constants {
 
                disableMenu( items );
                clearHistory();
-            } else if(
+            } else if(item == resetCompare)
+                  resetCompare();
+            else if(
                item.getParent() instanceof JPopupMenu &&
                ( (JPopupMenu) item.getParent() ).getInvoker() == history ) {
 
@@ -199,6 +203,7 @@ public abstract class AbstractView extends JFrame implements Constants {
       graphF.addActionListener( listener );
       graphFR.addActionListener( listener );
       noHistory.addActionListener( listener );
+      resetCompare.addActionListener( listener );
 
       titleLabel.setFont( title );
       titleLabel.setText( "Buscador v.2" );
@@ -366,6 +371,14 @@ public abstract class AbstractView extends JFrame implements Constants {
       setMenuEnabled( items, false );
    }
 
+   private void resetCompare() {
+      for( MenuElement element : compare.getSubElements() )
+         if( element instanceof JPopupMenu)
+            for( MenuElement item : element.getSubElements() )
+               if( item instanceof JSelectorMenuItem )
+                  ( (JSelectorMenuItem) item).setSelected( false );
+   }
+
    private void clearHistory() {
 
       feedbackHistory.clear();
@@ -400,6 +413,9 @@ public abstract class AbstractView extends JFrame implements Constants {
             history.add( item );
             compare.add( new JSelectorMenuItem( text ) );
          }
+         compare.addSeparator();
+         compare.add( resetCompare );
+
       } else {
          
          clearHistory.setEnabled( false );

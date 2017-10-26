@@ -1,5 +1,6 @@
 package seeker;
 
+import java.awt.Component;
 import java.awt.EventQueue;
 import java.io.File;
 import java.io.Serializable;
@@ -10,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.swing.JOptionPane;
+import javax.swing.JPopupMenu;
 import javax.swing.MenuElement;
 import javax.swing.UIManager;
 
@@ -130,13 +132,15 @@ public class View extends AbstractView {
    }
 
    @Override
-   protected void showResults( String idquery ) {
+   protected void showResults( String id ) {
 
-      currentIndex = idHistory.indexOf( idquery );
+      currentIndex = idHistory.indexOf( id );
       if( currentIndex < 0 )
          return;
-      final int id = Integer.parseInt( idquery.split( "\\s+" )[0] );
-      querySelector.setSelectedIndex( id );
+      final String[] ids = id.split( "\\s+" );
+      final int idquery = Integer.parseInt( ids[0] );
+      toggleSearch.setSelected( feedbackHistory.get( currentIndex ) );
+      querySelector.setSelectedIndex( idquery );
 
       final List<Similar> similars = similarsHistory.get( currentIndex );
       final List<Integer> relevants = relevantsHistory.get( currentIndex );
@@ -147,15 +151,17 @@ public class View extends AbstractView {
 
       System.out.println(
          DIVIDER +
-         "First 100 Similar Documents" +
+         "First " + 
+         MAX_DOC +
+         " Similar Documents" +
          DIVIDER
       );
 
       resultArea.setText( "" );
 
-      // Iterate over the first 100 documents found
+      // Iterate over the first MAX_DOC documents found
       String text = "";
-      for( int i = 0; i < similars.size() && i < 100; i++ ) {
+      for( int i = 0; i < similars.size() && i < MAX_DOC; i++ ) {
 
          final Similar similar = similars.get(i);
          System.out.println(
@@ -190,7 +196,7 @@ public class View extends AbstractView {
       }
 
       for(  int i = 0;
-            i < 100 && i < recall.size() && i < precision.size() && i < similars.size();
+            i < MAX_DOC && i < recall.size() && i < precision.size() && i < similars.size();
             i++
       ) {
 
@@ -223,12 +229,17 @@ public class View extends AbstractView {
       final Map<String, List<Double>> data =
          new HashMap<String, List<Double>>();
 
+      String title;
       for( int index : indeces ) {
 
          final int idquery = Integer.parseInt( idHistory.get( index ).split("\\s+")[0] );
-         String title = "";
-         if( indeces.length > 1 )
-            title = " - Query" + idquery;
+         title = "";
+         if( indeces.length > 1 ) {
+
+            title += " #" + idquery;
+            if( feedbackHistory.get( index ) )
+               title += " w/ RF";
+         }
 
          final List<Similar> similars = similarsHistory.get( index );
          final List<Integer> relevants = relevantsHistory.get( index );
@@ -252,26 +263,17 @@ public class View extends AbstractView {
          data.put( "Recall" + title, recallR);
       }
 
-      String title = "Comparison of Recall vs Precision";
+      title = "";
+      if ( indeces.length > 1 )
+         title += "Comparison of ";
+
+      title += "Recall vs Precision";
       if( indeces.length == 1 ) {
          
          final int idquery = Integer.parseInt( idHistory.get( 0 ).split("\\s+")[0] );
          title += " (Query #" + idquery;
-         if( feedbackHistory.get( 0 ) )
+         if( feedbackHistory.get( indeces[0] ) )
             title += " w/ Relevance Feedback";
-         title += ")";
-      } else {
-
-         title += " (Query ";
-         for(int index : indeces) {
-            
-            final int idquery = Integer.parseInt( idHistory.get( index ).split("\\s+")[0] );
-            title += "#" + idquery;
-            if( feedbackHistory.get( index ) )
-               title += " w/ RF";
-            title += " vs ";
-         }
-         title = title.substring( title.length() - 4, title.length() );
          title += ")";
       }
 
@@ -289,8 +291,10 @@ public class View extends AbstractView {
       
       boolean checked = false;
       for( MenuElement element : compare.getSubElements() )
-         if( !checked && element instanceof JSelectorMenuItem )
-            checked = ( (JSelectorMenuItem) element).isSelected();
+         if( !checked && element instanceof JPopupMenu)
+            for( MenuElement item : element.getSubElements() )
+               if( !checked && item instanceof JSelectorMenuItem )
+                  checked = ( (JSelectorMenuItem) item).isSelected();
 
       int[] indeces = new int[0]; 
       if( !checked ) {
@@ -303,7 +307,7 @@ public class View extends AbstractView {
          indeces = new int[] { currentIndex };
       } else {
 
-         MenuElement[] elements = compare.getSubElements(); 
+         MenuElement[] elements = compare.getSubElements()[0].getSubElements();
          List<Integer> ids = new ArrayList<>();
          for( int i = 0; i < elements.length; i++ ) {
 
@@ -326,10 +330,13 @@ public class View extends AbstractView {
 
    @Override
    protected void graphRelevantPrecisionAndRecall() {
+
       boolean checked = false;
       for( MenuElement element : compare.getSubElements() )
-         if( !checked && element instanceof JSelectorMenuItem )
-            checked = ( (JSelectorMenuItem) element).isSelected();
+         if( !checked && element instanceof JPopupMenu)
+            for( MenuElement item : element.getSubElements() )
+               if( !checked && item instanceof JSelectorMenuItem )
+                  checked = ( (JSelectorMenuItem) item).isSelected();
 
       int[] indeces = new int[0]; 
       if( !checked ) {
@@ -344,7 +351,7 @@ public class View extends AbstractView {
          indeces = new int[] { currentIndex };
       } else {
 
-         MenuElement[] elements = compare.getSubElements(); 
+         MenuElement[] elements = compare.getSubElements()[0].getSubElements();
          List<Integer> ids = new ArrayList<>();
          for( int i = 0; i < elements.length; i++ ) {
 
@@ -373,13 +380,18 @@ public class View extends AbstractView {
 
       final Map<String, List<Double>> data =
          new HashMap<String, List<Double>>();
-
+      
+      String title;
       for( int index : indeces ) {
          
          final int idquery = Integer.parseInt( idHistory.get( index ).split("\\s+")[0] );
-         String title = "F" + grapheme;
-         if( indeces.length > 1 )
-            title += "-Query " + idquery;
+         title = "F" + ( grapheme % 1 == 0 ? (int) grapheme : grapheme );
+         if( indeces.length > 1 ) {
+            
+            title += " #" + idquery;
+            if( feedbackHistory.get( index ) )
+               title += " w/ RF";
+         }
 
          final List<Similar> similars = similarsHistory.get( index );
          final List<Integer> relevants = relevantsHistory.get( index );
@@ -401,30 +413,17 @@ public class View extends AbstractView {
          }
          data.put( title, fm );
       }
-      String title = "";
+      title = "";
       if ( indeces.length > 1 )
          title += "Comparison of ";
 
-      title += "F" + grapheme + " Measure";
+      title += "F" + ( grapheme % 1 == 0 ? (int) grapheme : grapheme ) + " Measure";
       if( indeces.length == 1 ) {
          
          final int idquery = Integer.parseInt( idHistory.get( 0 ).split("\\s+")[0] );
          title += " (Query #" + idquery;
-         if( feedbackHistory.get( 0 ) )
+         if( feedbackHistory.get( indeces[0] ) )
             title += " w/ Relevance Feedback";
-         title += ")";
-      } else {
-
-         title += " (Query ";
-         for(int index : indeces) {
-            
-            final int idquery = Integer.parseInt( idHistory.get( index ).split("\\s+")[0] );
-            title += "#" + idquery;
-            if( feedbackHistory.get( index ) )
-               title += " w/ RF";
-            title += " vs ";
-         }
-         title = title.substring( title.length() - 4, title.length() );
          title += ")";
       }
 
@@ -442,8 +441,10 @@ public class View extends AbstractView {
 
       boolean checked = false;
       for( MenuElement element : compare.getSubElements() )
-         if( !checked && element instanceof JSelectorMenuItem )
-            checked = ( (JSelectorMenuItem) element).isSelected();
+         if( !checked && element instanceof JPopupMenu)
+            for( MenuElement item : element.getSubElements() )
+               if( !checked && item instanceof JSelectorMenuItem )
+                  checked = ( (JSelectorMenuItem) item).isSelected();
 
       int[] indeces = new int[0]; 
       if( !checked ) {
@@ -456,7 +457,7 @@ public class View extends AbstractView {
          indeces = new int[] { currentIndex };
       } else {
 
-         MenuElement[] elements = compare.getSubElements(); 
+         MenuElement[] elements = compare.getSubElements()[0].getSubElements();
          List<Integer> ids = new ArrayList<>();
          for( int i = 0; i < elements.length; i++ ) {
 
@@ -482,8 +483,10 @@ public class View extends AbstractView {
 
       boolean checked = false;
       for( MenuElement element : compare.getSubElements() )
-         if( !checked && element instanceof JSelectorMenuItem )
-            checked = ( (JSelectorMenuItem) element).isSelected();
+         if( !checked && element instanceof JPopupMenu)
+            for( MenuElement item : element.getSubElements() )
+               if( !checked && item instanceof JSelectorMenuItem )
+                  checked = ( (JSelectorMenuItem) item).isSelected();
 
       int[] indeces = new int[0]; 
       if( !checked ) {
@@ -498,13 +501,13 @@ public class View extends AbstractView {
          indeces = new int[] { currentIndex };
       } else {
 
-         MenuElement[] elements = compare.getSubElements(); 
+         MenuElement[] elements = compare.getSubElements()[0].getSubElements();
          List<Integer> ids = new ArrayList<>();
          for( int i = 0; i < elements.length; i++ ) {
 
             if( elements[i] instanceof JSelectorMenuItem ) {
 
-               final JSelectorMenuItem item = (JSelectorMenuItem )elements[i];
+               final JSelectorMenuItem item = (JSelectorMenuItem) elements[i];
                if( item.isSelected() ) {
 
                   final int index = idHistory.indexOf( item.getText() );
@@ -588,8 +591,10 @@ public class View extends AbstractView {
 
       boolean checked = false;
       for( MenuElement element : compare.getSubElements() )
-         if( !checked && element instanceof JSelectorMenuItem )
-            checked = ( (JSelectorMenuItem) element).isSelected();
+         if( !checked && element instanceof JPopupMenu)
+            for( MenuElement item : element.getSubElements() )
+               if( !checked && item instanceof JSelectorMenuItem )
+                  checked = ( (JSelectorMenuItem) item).isSelected();
 
       int[] indeces = new int[0]; 
       if( !checked ) {
@@ -602,7 +607,7 @@ public class View extends AbstractView {
          indeces = new int[] { currentIndex };
       } else {
 
-         MenuElement[] elements = compare.getSubElements(); 
+         MenuElement[] elements = compare.getSubElements()[0].getSubElements();
          List<Integer> ids = new ArrayList<>();
          for( int i = 0; i < elements.length; i++ ) {
 
@@ -629,9 +634,11 @@ public class View extends AbstractView {
 
       boolean checked = false;
       for( MenuElement element : compare.getSubElements() )
-         if( !checked && element instanceof JSelectorMenuItem )
-            checked = ( (JSelectorMenuItem) element).isSelected();
-
+         if( !checked && element instanceof JPopupMenu)
+            for( MenuElement item : element.getSubElements() )
+               if( !checked && item instanceof JSelectorMenuItem )
+                  checked = ( (JSelectorMenuItem) item).isSelected();
+            
       int[] indeces = new int[0]; 
       if( !checked ) {
 
@@ -644,8 +651,8 @@ public class View extends AbstractView {
         
          indeces = new int[] { currentIndex };
       } else {
-
-         MenuElement[] elements = compare.getSubElements(); 
+        
+         MenuElement[] elements = compare.getSubElements()[0].getSubElements();
          List<Integer> ids = new ArrayList<>();
          for( int i = 0; i < elements.length; i++ ) {
 
