@@ -17,7 +17,7 @@ public class Main implements Constants {
       */
       if( !Load.getInstance().checkConnection() )
         System.out.println( FAILURE );
-      //Load.getInstance().loadStopWords();
+      //Load.getInstance().addIDF();
    
       //Crea la interfez y muestrala
       View view = new View();

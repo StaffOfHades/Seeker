@@ -385,6 +385,14 @@ public class Connect implements Constants {
             "and `temp`.`idquery` = `made`.`idquery`;";
          statement = connection.prepareStatement( sqlQuery );
          statement.executeQuery();
+         
+         sqlQuery = "update `made` " +
+            "inner join `temp` " +
+            "on `made`.`term` = `temp`.`term` " +
+            "and `made`.`idquery` = `temp`.`idquery` " +
+            "set `made`.`tf1` = `temp`.`tf1`";
+         statement = connection.prepareStatement( sqlQuery );
+         statement.executeQuery();
          connection.close();
          return getSimilarity( idquery );
       } catch( Exception e ) {
@@ -674,10 +682,10 @@ public class Connect implements Constants {
        "and `terms`.`idf` = 0;";
        statement = connection.prepareStatement( sqlQuery );
        statement.execute();
-
-       sqlQuery = "update `terms` set `idf` = (" +
-         "select `idf` from `temp` where `terms`.`term` = `term`" +
-       ");";
+       
+       sqlQuery = "update `terms` " +
+         "inner join `temp` " +
+         "set `terms`.`idf` = `temp`.`idf`";
        statement = connection.prepareStatement( sqlQuery );
        statement.execute();
 
