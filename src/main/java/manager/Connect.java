@@ -381,8 +381,16 @@ public class Connect implements Constants {
 
          sqlQuery = "update `temp`, `made` " +
             "set `temp`.`tf1` = `made`.`tf`" +
-            "where `temp`.`idquery` = `made`.`idquery`" +
-            "and `temp`.`tf1` is null";
+            "where `temp`.`tf1` is null " +
+            "and `temp`.`idquery` = `made`.`idquery`";
+         statement = connection.prepareStatement( sqlQuery );
+         statement.executeQuery();
+
+         sqlQuery = "update `made` " +
+            "inner join `temp` " +
+            "on `made`.`term` = `temp`.`term` " +
+            "and `made`.`idquery` = `temp`.`idquery` " +
+            "set `made`.`tf1` = `temp`.`tf1`";
          statement = connection.prepareStatement( sqlQuery );
          statement.executeQuery();
                
