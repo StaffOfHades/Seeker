@@ -16,7 +16,8 @@ public class Main implements Constants {
       load.loadRelevant();
       */
       if( !Load.getInstance().checkConnection() )
-      System.out.println( FAILURE );
+        System.out.println( FAILURE );
+      //Load.getInstance().loadStopWords();
    
       //Crea la interfez y muestrala
       View view = new View();

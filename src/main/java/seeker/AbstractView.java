@@ -107,7 +107,10 @@ public abstract class AbstractView extends JFrame implements Constants {
       final JMenuItem graphF = new JMenuItem( "F-Measure" );
       final JMenuItem graphFR = new JMenuItem( "F-Measure" );
       noHistory = new JMenuItem( "No Search History" );
+      final JMenuItem removeStopWords = new JMenuItem( "Remove StopWords" );
       resetCompare = new JMenuItem( "Reset" );
+      final JMenuItem resetIdf = new JMenuItem( "Reset Idf" );
+      final JMenuItem resetTf1 = new JMenuItem( "Reset TF1" );
       final JMenuItem[] items = {toggleSearch, exportR, graphF, graphRP, relevant};
       resultArea = new JTextArea();
       queryField = new JTextField();
@@ -139,8 +142,14 @@ public abstract class AbstractView extends JFrame implements Constants {
 
                disableMenu( items );
                clearHistory();
-            } else if(item == resetCompare)
-                  resetCompare();
+            } else if( item == resetCompare )
+               resetCompare();
+            else if( item == removeStopWords )
+               connect.removeStopWords();
+            else if( item == resetTf1 )
+               connect.resetTf1();
+            else if( item == resetIdf )
+               connect.resetIDF();
             else if(
                item.getParent() instanceof JPopupMenu &&
                ( (JPopupMenu) item.getParent() ).getInvoker() == history ) {
@@ -177,6 +186,10 @@ public abstract class AbstractView extends JFrame implements Constants {
       menuBar.add( history );
       menuBar.add( graph );
       edit.add( toggleSearch );
+      edit.add( removeStopWords );
+      edit.addSeparator();
+      edit.add( resetIdf );
+      edit.add( resetTf1 );
       file.add( export );
       file.add( exportR );
       graph.add( graphF );
@@ -203,7 +216,10 @@ public abstract class AbstractView extends JFrame implements Constants {
       graphF.addActionListener( listener );
       graphFR.addActionListener( listener );
       noHistory.addActionListener( listener );
+      removeStopWords.addActionListener( listener );
       resetCompare.addActionListener( listener );
+      resetIdf.addActionListener( listener );
+      resetTf1.addActionListener( listener );
 
       titleLabel.setFont( title );
       titleLabel.setText( "Buscador v.2" );

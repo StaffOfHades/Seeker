@@ -22,17 +22,19 @@ import java.util.stream.StreamSupport;
 public class Load extends Connect {
   
    private final static String TERMSTXT =
-      PATH + "loader/term-vocab.txt";
+      PATH + "manager/term-vocab.txt";
    private final static String DOCUMENTSTXT =
-      PATH + "loader/doc-text.txt";
+      PATH + "manager/doc-text.txt";
    private final static String QUERIESTXT =
-      PATH + "loader/query-text.txt";
+      PATH + "manager/query-text.txt";
    private final static String CONTAINSTXT =
-      PATH + "loader/doc-vecs.txt";
+      PATH + "manager/doc-vecs.txt";
    private final static String MADETXT =
-      PATH + "loader/queries-vec.txt";
+      PATH + "manager/queries-vec.txt";
    private final static String RELEVANTTXT =
-      PATH + "loader/rlv-ass.txt";
+      PATH + "manager/rlv-ass.txt";
+   private final static String STOPWORDSTXT =
+      PATH + "manager/stopwords-en.txt";
 
    private static Load sLoad;
     
@@ -75,6 +77,50 @@ public class Load extends Connect {
          final PreparedStatement statement = connection.prepareStatement( sqlQuery );
          statement.execute();
          }
+         connection.close();
+      } catch( Exception e ) {
+         e.printStackTrace();
+      }
+   }
+
+   public void loadStopWords() {
+      
+      File file;
+      FileReader input;
+      LineNumberReader reader;
+      List<String> list;
+      String s;
+      try {
+
+         // Open connection,
+         final Connection connection = DriverManager.getConnection( DB );
+
+         // Check if succesful.
+         if( connection == null )
+            return;
+
+         System.out.println( SUCCESS );
+         System.out.println( DIVIDER + "Adding StopWords to DB" + DIVIDER );
+
+         file = new File( STOPWORDSTXT );
+         input = new FileReader( file );
+         reader = new LineNumberReader( input );
+         list = reader.lines().collect(Collectors.toCollection(ArrayList::new));
+        
+         for(String line: list) {
+           
+            final String sqlQuery = "insert into `stopwords` (`word`) values(?);";
+            final PreparedStatement statement = connection.prepareStatement( sqlQuery );
+            statement.setString(
+               1,
+               line.trim()
+            );
+            statement.execute();
+            statement.close();
+         }
+
+         reader.close();
+         input.close();
          connection.close();
       } catch( Exception e ) {
          e.printStackTrace();

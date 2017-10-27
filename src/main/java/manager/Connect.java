@@ -225,7 +225,7 @@ public class Connect implements Constants {
          // SQL Query to determine similarity using Vector Space Model.
          final String sqlQuery = 
             "select `documents`.`id`, " +
-            "sum(`contains`.`tf` * `terms`.`idf` * `made`.`tf` * `terms`.`idf`) / " +
+            "sum(`contains`.`tf` * `terms`.`idf` * `made`.`tf1` * `terms`.`idf`) / " +
             "(`documents`.`weight` * `queries`.`weight`) as `similar` " +
             "from `queries`, `documents`, `contains`, `made`, `terms` " +
             "where `documents`.`id` = `contains`.`iddoc` " +
@@ -349,7 +349,7 @@ public class Connect implements Constants {
          "insert into `temp` (`idquery`, `term`,`tf1`) select " +
             "`made`.`idquery`, " +
             "`made`.`term`, " +
-            "? * `made`.`tf` + ? / (select " +
+            "? * `made`.`tf1` + ? / (select " +
                "count(`n1`.`iddoc`) " +
                "from `n1`"  +
             ") * coalesce(" +
@@ -381,53 +381,12 @@ public class Connect implements Constants {
 
          sqlQuery = "update `temp`, `made` " +
             "set `temp`.`tf1` = `made`.`tf`" +
-            "where `temp`.`idquery` = `made`.`idquery`" +
-            "and `temp`.`tf1` is null";
+            "where `temp`.`tf1` is null " +
+            "and `temp`.`idquery` = `made`.`idquery`;";
          statement = connection.prepareStatement( sqlQuery );
          statement.executeQuery();
-               
-         System.out.println( SUCCESS );
-         System.out.println(
-            DIVIDER +
-            "Use dot product to get similarity for new query q1 from query: #" +
-            idquery +
-            DIVIDER
-         );
-
-         similarsQ1 = new ArrayList<>();
-
-         // SQL Query to determine similarity using Vector Space Model.
-         sqlQuery = 
-            "select `documents`.`id`, " +
-            "sum(`contains`.`tf` * `terms`.`idf` * `made`.`tf1` * `terms`.`idf`) / " +
-            "(`documents`.`weight` * `queries`.`weight`) as `similar` " +
-            "from `queries`, `documents`, `contains`, `made`, `terms` " +
-            "where `documents`.`id` = `contains`.`iddoc` " +
-            "and `contains`.`term` = `terms`.`term` " +
-            "and `made`.`term` = `terms`.`term` " +
-            "and `made`.`idquery` = `queries`.`id` " +
-            "and `queries`.`id` = ? " +
-            "group by `documents`.`id` " +
-            "order by `similar` desc;"
-         ;
-         statement = connection.prepareStatement( sqlQuery );
-         statement.setInt( 1, idquery );
-
-         // Execute query & parse result.
-         final ResultSet result = statement.executeQuery();
-
-         // Add all results to list
-         while( result.next() ) {
-
-            // Save into custom class for later retrieval,
-            final Similar similar = new Similar(
-               result.getInt( 1 ),
-               result.getDouble( 2 )
-            );
-            // Add to list for a more permanent storage.
-            similarsQ1.add( similar );
-         }
          connection.close();
+         return getSimilarity( idquery );
       } catch( Exception e ) {
 
          e.printStackTrace();
@@ -617,12 +576,116 @@ public class Connect implements Constants {
          if( result.next() ) {
             idquery = result.getInt( 1 );
          }
+         connection.close();
       } catch( Exception e ) {
 
          e.printStackTrace();
       }
       return idquery;
    }
+
+    public void removeStopWords() {
+      
+      // Open connection to Database && Run query.
+      try {
+         
+         // Open connection,
+         final Connection connection = DriverManager.getConnection( DB );
+
+         // Check if succesful.
+         if( connection == null )
+            return;
+         
+         System.out.println( SUCCESS );
+         System.out.println( DIVIDER + "Removing stopwords from data" + DIVIDER );
+
+         // SQL Query to find an idquery for a given query.
+         String sqlQuery = "update `terms`, `stopwords` " +
+            "set `idf` = 0 " +
+            "where `terms`.`term` = `stopwords`.`word`;";
+         PreparedStatement statement = connection.prepareStatement( sqlQuery );
+
+         // Execute query & parse result.
+         statement.executeQuery();
+         connection.close();
+      } catch( Exception e ) {
+
+         e.printStackTrace();
+      }
+   }
+
+   public void resetTf1() {
+      
+      // Open connection to Database && Run query.
+      try {
+         
+         // Open connection,
+         final Connection connection = DriverManager.getConnection( DB );
+
+         // Check if succesful.
+         if( connection == null )
+            return;
+         
+         System.out.println( SUCCESS );
+         System.out.println( DIVIDER + "Reseting Tf1 to default values" + DIVIDER );
+
+         // SQL Query to find an idquery for a given query.
+         String sqlQuery = "update `made` set `tf1` = `tf`;";
+         PreparedStatement statement = connection.prepareStatement( sqlQuery );
+
+         // Execute query & parse result.
+         statement.executeQuery();
+         connection.close();
+      } catch( Exception e ) {
+
+         e.printStackTrace();
+      }
+   }
+
+   public void resetIDF() {
+    
+    Connection connection;
+
+    try {
+    
+       // Open connection,
+       connection = DriverManager.getConnection( DB );
+
+       // Check if succesful.
+       if( connection == null )
+       return;
+
+       System.out.println( SUCCESS );
+       System.out.println( DIVIDER + "Updating idf to terms when 0" + DIVIDER );
+
+       String sqlQuery = "CREATE TEMPORARY TABLE IF NOT EXISTS `temp` (" +
+       "`term` varchar(32) NOT NULL, " +
+       "`idf` double(20,15) unsigned DEFAULT NULL, " +
+       "PRIMARY KEY (`term`) " +
+       ") ENGINE=InnoDB DEFAULT CHARSET=utf8;";
+       PreparedStatement statement = connection.prepareStatement( sqlQuery );
+       statement.execute();
+
+       sqlQuery = "insert into `temp`(`term`, `idf`) " +
+       "select `terms`.`term`, " +
+       "log10( (select count(`text`) from `documents`) / `terms`.`df`) " +
+       "from `terms` " +
+       "where `terms`.`df` > 0 " +
+       "and `terms`.`idf` = 0;";
+       statement = connection.prepareStatement( sqlQuery );
+       statement.execute();
+
+       sqlQuery = "update `terms` set `idf` = (" +
+         "select `idf` from `temp` where `terms`.`term` = `term`" +
+       ");";
+       statement = connection.prepareStatement( sqlQuery );
+       statement.execute();
+
+       connection.close();
+    } catch( Exception e ) {
+       e.printStackTrace();
+    }
+ }
 }
 
 /*
