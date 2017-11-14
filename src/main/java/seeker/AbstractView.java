@@ -24,6 +24,8 @@ import javax.swing.LayoutStyle;
 import javax.swing.MenuElement;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.WindowConstants;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
@@ -41,7 +43,9 @@ public abstract class AbstractView extends JFrame implements Constants {
 
    // View Variables
    protected ActionListener listener;
-   protected JCheckBoxMenuItem toggleSearch;
+   protected JSelectorMenuItem removeStopWords;
+   protected JSelectorMenuItem useRelevanceFeedback;
+   protected JSelectorMenuItem useThesauri;
    protected JComboBox<String> querySelector;
    protected JMenu compare;
    protected JTextArea resultArea;
@@ -55,6 +59,8 @@ public abstract class AbstractView extends JFrame implements Constants {
    // Inner Variables
    protected final Connect connect;
    protected final LinkedList<Boolean> feedbackHistory;
+   protected final LinkedList<Boolean> stopWordHistory;
+   protected final LinkedList<Boolean> thesaurusHistory;
    protected LinkedList<String> queryHistory;
    protected LinkedList<String> idHistory;
    protected LinkedList<List<Similar>> similarsHistory;
@@ -66,6 +72,8 @@ public abstract class AbstractView extends JFrame implements Constants {
 
       connect = Connect.getInstance();
       feedbackHistory = new LinkedList<>();
+      stopWordHistory = new LinkedList<>();
+      thesaurusHistory = new LinkedList<>();
       queryHistory = new LinkedList<>();
       idHistory = new LinkedList<>();
       similarsHistory = new LinkedList<List<Similar>>();
@@ -88,7 +96,6 @@ public abstract class AbstractView extends JFrame implements Constants {
       
       final GroupLayout layout = new GroupLayout( getContentPane() );
       final JButton searchTerm = new JButton();
-      toggleSearch = new JCheckBoxMenuItem( "Use Relevance Feedback" );
       querySelector = new JComboBox<>( connect.getQueries() );
       final JLabel resultLabel = new JLabel();
       final JLabel titleLabel = new JLabel();
@@ -102,16 +109,26 @@ public abstract class AbstractView extends JFrame implements Constants {
       clearHistory = new JMenuItem( "Clear History" );
       final JMenuItem export = new JMenuItem( "Export to CSV" );
       final JMenuItem exportR = new JMenuItem( "Export (Relevant) to CSV" );
-      final JMenuItem graphRP = new JMenuItem( "Recall & Precision" );
-      final JMenuItem graphRelevantRP = new JMenuItem( "Recall & Precision" );
       final JMenuItem graphF = new JMenuItem( "F-Measure" );
       final JMenuItem graphFR = new JMenuItem( "F-Measure" );
+      final JMenuItem graphRP = new JMenuItem( "Recall & Precision" );
+      final JMenuItem graphRelevantRP = new JMenuItem( "Recall & Precision" );
       noHistory = new JMenuItem( "No Search History" );
-      final JMenuItem removeStopWords = new JMenuItem( "Remove StopWords" );
       resetCompare = new JMenuItem( "Reset" );
       final JMenuItem resetIdf = new JMenuItem( "Reset Idf" );
       final JMenuItem resetTf1 = new JMenuItem( "Reset TF1" );
-      final JMenuItem[] items = {toggleSearch, exportR, graphF, graphRP, relevant};
+      final JMenuItem[] items = {      
+         exportR,
+         graphF,
+         graphFR,
+         graphRP,
+         graphRelevantRP,
+         relevant
+      };
+      removeStopWords = new JSelectorMenuItem( "Remove Stop Words" );
+      useRelevanceFeedback = new JSelectorMenuItem( "Use Relevance Feedback" );
+      useThesauri = new JSelectorMenuItem( "Use Thesauri" );
+
       resultArea = new JTextArea();
       queryField = new JTextField();
 
@@ -144,8 +161,6 @@ public abstract class AbstractView extends JFrame implements Constants {
                clearHistory();
             } else if( item == resetCompare )
                resetCompare();
-            else if( item == removeStopWords )
-               connect.removeStopWords();
             else if( item == resetTf1 )
                connect.resetTf1();
             else if( item == resetIdf )
@@ -177,15 +192,16 @@ public abstract class AbstractView extends JFrame implements Constants {
          TEXT_BODY
       );
 
-      noHistory.setEnabled( false );
-      toggleSearch.setEnabled( false );
       clearHistory.setEnabled( false );
+      compare.setEnabled( false );
+      noHistory.setEnabled( false );
 
       menuBar.add( file );
       menuBar.add( edit );
       menuBar.add( history );
       menuBar.add( graph );
-      edit.add( toggleSearch );
+      edit.add( useRelevanceFeedback );
+      edit.add( useThesauri );
       edit.add( removeStopWords );
       edit.addSeparator();
       edit.add( resetIdf );
@@ -216,7 +232,6 @@ public abstract class AbstractView extends JFrame implements Constants {
       graphF.addActionListener( listener );
       graphFR.addActionListener( listener );
       noHistory.addActionListener( listener );
-      removeStopWords.addActionListener( listener );
       resetCompare.addActionListener( listener );
       resetIdf.addActionListener( listener );
       resetTf1.addActionListener( listener );
@@ -257,8 +272,8 @@ public abstract class AbstractView extends JFrame implements Constants {
 
                if( querySelector.getSelectedIndex() > 0 ) {
 
-                  queryField.setText("");
-                  setMenuEnabled(items, true);
+                  queryField.setText( "" );
+                  setMenuEnabled( items, true );
                }
             }
          }
@@ -286,6 +301,19 @@ public abstract class AbstractView extends JFrame implements Constants {
                
                if( queryField.getText().trim().length() >  0 )
                   disableMenu( items );
+            }
+         }
+      );
+
+      removeStopWords.addActionListener(
+         new ActionListener() {
+      
+            @Override
+            public void actionPerformed( ActionEvent event ) {
+               if( removeStopWords.isSelected() )
+                  connect.removeStopWords();
+               else
+                  connect.resetIDF();
             }
          }
       );
@@ -349,6 +377,8 @@ public abstract class AbstractView extends JFrame implements Constants {
       
       titleLabel.getAccessibleContext().setAccessibleName("titleLabel");
 
+      disableMenu( items );
+
       pack();
    }
 
@@ -383,7 +413,6 @@ public abstract class AbstractView extends JFrame implements Constants {
    private void disableMenu( final JMenuItem[] items ) {
 
       querySelector.setSelectedIndex( 0 );
-      toggleSearch.setSelected( false );
       setMenuEnabled( items, false );
    }
 
@@ -398,6 +427,8 @@ public abstract class AbstractView extends JFrame implements Constants {
    private void clearHistory() {
 
       feedbackHistory.clear();
+      stopWordHistory.clear();
+      thesaurusHistory.clear();
       idHistory.clear();
       queryHistory.clear();
       similarsHistory.clear();
@@ -408,10 +439,12 @@ public abstract class AbstractView extends JFrame implements Constants {
    }
    
    protected void updateHistory() {
-
+    
       for( MenuElement element : history.getSubElements() )
-         if( element instanceof JMenuItem )
-            ( (JMenuItem) element).removeActionListener( listener );
+         if( element instanceof JPopupMenu)
+            for( MenuElement item : element.getSubElements() )
+               if( item instanceof JMenuItem )
+                  ( (JMenuItem) item).removeActionListener( listener );
 
       clearHistory.addActionListener( listener );
       history.removeAll();
@@ -421,7 +454,8 @@ public abstract class AbstractView extends JFrame implements Constants {
       if( similarsHistory.size() > 0 ) {
 
          clearHistory.setEnabled( true );
-         for(int i = 0; i < idHistory.size() && i < feedbackHistory.size(); i++ ) {
+         compare.setEnabled( true );
+         for(int i = 0; i < idHistory.size(); i++ ) {
             
             final String text = idHistory.get( i );
             final JMenuItem item = new JMenuItem( text );
@@ -435,6 +469,7 @@ public abstract class AbstractView extends JFrame implements Constants {
       } else {
          
          clearHistory.setEnabled( false );
+         compare.setEnabled( false );
          history.add( noHistory );
       }
       history.addSeparator();

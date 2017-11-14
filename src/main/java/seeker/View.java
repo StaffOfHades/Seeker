@@ -54,7 +54,7 @@ public class View extends AbstractView {
       
       // Get similarity for a given idquery
       List<Similar> similars = connect.getSimilarity( idquery );
-      if( toggleSearch.isSelected() )
+      if( useRelevanceFeedback.isSelected() )
             similars = connect.getSimilarityQ1( idquery, similars );
 
       if( similars == null )
@@ -115,13 +115,28 @@ public class View extends AbstractView {
 
       if( idHistory.size() > 5 )
          idHistory.removeFirst();
-      final String text = idquery + ( toggleSearch.isSelected() ? " w/ Feedback" : "" ) ;
+         
+      String text = Integer.toString( idquery );
+      if( useRelevanceFeedback.isSelected() )
+         text += " - RF";
+      if( removeStopWords.isSelected()  )
+         text += " - SW";
+      if( useThesauri.isSelected()  )
+         text += " - TH";
       idHistory.add( text );
       currentIndex = idHistory.indexOf( text );
 
       if( feedbackHistory.size() > 5 )
          feedbackHistory.removeFirst();
-      feedbackHistory.add( toggleSearch.isSelected() );
+      feedbackHistory.add( useRelevanceFeedback.isSelected() );
+
+      if( stopWordHistory.size() > 5 )
+         stopWordHistory.removeFirst();
+      stopWordHistory.add( removeStopWords.isSelected() );
+
+      if( thesaurusHistory.size() > 5 )
+         thesaurusHistory.removeFirst();
+      thesaurusHistory.add( useThesauri.isSelected() );
      
       updateHistory();
       showResults();
@@ -135,11 +150,14 @@ public class View extends AbstractView {
    protected void showResults( String id ) {
 
       currentIndex = idHistory.indexOf( id );
+      System.out.println( "Current index: " + currentIndex );
       if( currentIndex < 0 )
          return;
       final String[] ids = id.split( "\\s+" );
       final int idquery = Integer.parseInt( ids[0] );
-      toggleSearch.setSelected( feedbackHistory.get( currentIndex ) );
+      removeStopWords.setSelected( stopWordHistory.get( currentIndex ) );
+      useRelevanceFeedback.setSelected( feedbackHistory.get( currentIndex ) );
+      useThesauri.setSelected( thesaurusHistory.get( currentIndex ) );
       querySelector.setSelectedIndex( idquery );
 
       final List<Similar> similars = similarsHistory.get( currentIndex );
@@ -213,6 +231,16 @@ public class View extends AbstractView {
       System.out.println( DIVIDER + "End" + DIVIDER + "\n" );
    }
 
+   private boolean compareSelected() {
+      boolean selected = false;
+      for( MenuElement element : compare.getSubElements() )
+         if( !selected && element instanceof JPopupMenu)
+            for( MenuElement item : element.getSubElements() )
+               if( !selected && item instanceof JSelectorMenuItem )
+                  selected = ( (JSelectorMenuItem) item).isSelected();
+      return selected;
+   }
+
    private void graph(
       Map<String, List<Double>> map,
       String title,
@@ -238,7 +266,11 @@ public class View extends AbstractView {
 
             title += " #" + idquery;
             if( feedbackHistory.get( index ) )
-               title += " w/ RF";
+               title += " - RF";
+            if( stopWordHistory.get( index ) )
+               title += " - SW";
+            if( thesaurusHistory.get( index ) )
+               title += " - TH";
          }
 
          final List<Similar> similars = similarsHistory.get( index );
@@ -273,7 +305,11 @@ public class View extends AbstractView {
          final int idquery = Integer.parseInt( idHistory.get( 0 ).split("\\s+")[0] );
          title += " (Query #" + idquery;
          if( feedbackHistory.get( indeces[0] ) )
-            title += " w/ Relevance Feedback";
+            title += " - Feedback";
+         if( stopWordHistory.get( indeces[0] ) )
+            title += " - StopWords";
+         if( thesaurusHistory.get( indeces[0] ) )
+            title += " - Thesauri";
          title += ")";
       }
 
@@ -289,15 +325,9 @@ public class View extends AbstractView {
    @Override
    protected void graphPrecisionAndRecall() {
       
-      boolean checked = false;
-      for( MenuElement element : compare.getSubElements() )
-         if( !checked && element instanceof JPopupMenu)
-            for( MenuElement item : element.getSubElements() )
-               if( !checked && item instanceof JSelectorMenuItem )
-                  checked = ( (JSelectorMenuItem) item).isSelected();
 
       int[] indeces = new int[0]; 
-      if( !checked ) {
+      if( !compareSelected() ) {
 
          if( similarsHistory.size() <= 0 ) {
 
@@ -331,15 +361,8 @@ public class View extends AbstractView {
    @Override
    protected void graphRelevantPrecisionAndRecall() {
 
-      boolean checked = false;
-      for( MenuElement element : compare.getSubElements() )
-         if( !checked && element instanceof JPopupMenu)
-            for( MenuElement item : element.getSubElements() )
-               if( !checked && item instanceof JSelectorMenuItem )
-                  checked = ( (JSelectorMenuItem) item).isSelected();
-
       int[] indeces = new int[0]; 
-      if( !checked ) {
+      if( !compareSelected() ) {
 
          if( recallHistory.get( currentIndex ).size() <= 0 ||
             precisionHistory.get( currentIndex ).size() <= 0 ) {
@@ -384,13 +407,18 @@ public class View extends AbstractView {
       String title;
       for( int index : indeces ) {
          
+         System.out.println( "Index: " + index );
          final int idquery = Integer.parseInt( idHistory.get( index ).split("\\s+")[0] );
          title = "F" + ( grapheme % 1 == 0 ? (int) grapheme : grapheme );
          if( indeces.length > 1 ) {
             
             title += " #" + idquery;
             if( feedbackHistory.get( index ) )
-               title += " w/ RF";
+               title += " - RF";
+            if( stopWordHistory.get( index ) )
+               title += " - SW";
+            if( thesaurusHistory.get( index ) )
+               title += " - TH";
          }
 
          final List<Similar> similars = similarsHistory.get( index );
@@ -406,6 +434,7 @@ public class View extends AbstractView {
 
             if( !onlyRelevant || relevants.contains( s.getId() ) ) {
                
+               System.out.println( "Values: " + precision.get( i )  + ", " + recall.get( i ) );
                final double p = precision.get( i );
                final double r = recall.get( i );
                fm.add( ( 1 + graphemePow2 ) * ( p * r ) / ( graphemePow2 * p + r ) );
@@ -423,7 +452,11 @@ public class View extends AbstractView {
          final int idquery = Integer.parseInt( idHistory.get( 0 ).split("\\s+")[0] );
          title += " (Query #" + idquery;
          if( feedbackHistory.get( indeces[0] ) )
-            title += " w/ Relevance Feedback";
+            title += " - Feedback";
+         if( stopWordHistory.get( indeces[0] ) )
+            title += " - StopWords";
+         if( thesaurusHistory.get( indeces[0] ) )
+            title += " - Thesauri";
          title += ")";
       }
 
@@ -439,15 +472,8 @@ public class View extends AbstractView {
    @Override
    protected void graphFMeasure( double grapheme ) {
 
-      boolean checked = false;
-      for( MenuElement element : compare.getSubElements() )
-         if( !checked && element instanceof JPopupMenu)
-            for( MenuElement item : element.getSubElements() )
-               if( !checked && item instanceof JSelectorMenuItem )
-                  checked = ( (JSelectorMenuItem) item).isSelected();
-
       int[] indeces = new int[0]; 
-      if( !checked ) {
+      if( !compareSelected() ) {
 
          if( similarsHistory.size() <= 0 ) {
 
@@ -481,15 +507,8 @@ public class View extends AbstractView {
    @Override
    protected void graphRelevantFMeasure( double grapheme ) {
 
-      boolean checked = false;
-      for( MenuElement element : compare.getSubElements() )
-         if( !checked && element instanceof JPopupMenu)
-            for( MenuElement item : element.getSubElements() )
-               if( !checked && item instanceof JSelectorMenuItem )
-                  checked = ( (JSelectorMenuItem) item).isSelected();
-
       int[] indeces = new int[0]; 
-      if( !checked ) {
+      if( !compareSelected() ) {
 
          if( recallHistory.get( currentIndex ).size() <= 0 ||
             precisionHistory.get( currentIndex ).size() <= 0 ) {
@@ -520,9 +539,10 @@ public class View extends AbstractView {
          }
          indeces = ids.stream().mapToInt( i -> i).toArray();
       }
-      if( indeces.length > 0 ) {
+      
+      if( indeces.length > 0 )
          graphFMeasure( grapheme, indeces, true );
-      } else
+      else
          System.err.println( "Nothing to graph" );
    }
 
@@ -579,6 +599,10 @@ public class View extends AbstractView {
          String title = "relevant-" + idquery;
          if( feedbackHistory.get( index ) )
             title += "-feedback";
+         if( stopWordHistory.get( index ) )
+            title += "-stopwords";
+         if( thesaurusHistory.get( index ) )
+            title += "-thesauri";
          title += ".csv";
          csv.put( title, table);
       }
@@ -588,16 +612,9 @@ public class View extends AbstractView {
 
    @Override
    protected void exportToCsv() {
-
-      boolean checked = false;
-      for( MenuElement element : compare.getSubElements() )
-         if( !checked && element instanceof JPopupMenu)
-            for( MenuElement item : element.getSubElements() )
-               if( !checked && item instanceof JSelectorMenuItem )
-                  checked = ( (JSelectorMenuItem) item).isSelected();
-
+      
       int[] indeces = new int[0]; 
-      if( !checked ) {
+      if( !compareSelected() ) {
 
          if( similarsHistory.size() <= 0 ) {
 
@@ -632,15 +649,8 @@ public class View extends AbstractView {
    @Override
    protected void exportRelevantToCsv() {
 
-      boolean checked = false;
-      for( MenuElement element : compare.getSubElements() )
-         if( !checked && element instanceof JPopupMenu)
-            for( MenuElement item : element.getSubElements() )
-               if( !checked && item instanceof JSelectorMenuItem )
-                  checked = ( (JSelectorMenuItem) item).isSelected();
-            
       int[] indeces = new int[0]; 
-      if( !checked ) {
+      if( !compareSelected() ) {
 
          if( recallHistory.get( currentIndex ).size() <= 0 ||
             precisionHistory.get( currentIndex ).size() <= 0 ) {

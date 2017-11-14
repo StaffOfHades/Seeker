@@ -225,7 +225,7 @@ public class Connect implements Constants {
          // SQL Query to determine similarity using Vector Space Model.
          final String sqlQuery = 
             "select `documents`.`id`, " +
-            "sum(`contains`.`tf` * `terms`.`idf` * `made`.`tf1` * `terms`.`idf`) / " +
+            "sum(`contains`.`tf` * `terms`.`idf1` * `made`.`tf1` * `terms`.`idf1`) / " +
             "(`documents`.`weight` * `queries`.`weight`) as `similar` " +
             "from `queries`, `documents`, `contains`, `made`, `terms` " +
             "where `documents`.`id` = `contains`.`iddoc` " +
@@ -394,6 +394,7 @@ public class Connect implements Constants {
          statement = connection.prepareStatement( sqlQuery );
          statement.executeQuery();
          connection.close();
+
          return getSimilarity( idquery );
       } catch( Exception e ) {
 
@@ -605,11 +606,15 @@ public class Connect implements Constants {
             return;
          
          System.out.println( SUCCESS );
-         System.out.println( DIVIDER + "Removing stopwords from data" + DIVIDER );
+         System.out.println(
+            DIVIDER +
+            "Removing stopwords" +
+            DIVIDER
+         );
 
          // SQL Query to find an idquery for a given query.
          String sqlQuery = "update `terms`, `stopwords` " +
-            "set `idf` = 0 " +
+            "set `idf1` = 0 " +
             "where `terms`.`term` = `stopwords`.`word`;";
          PreparedStatement statement = connection.prepareStatement( sqlQuery );
 
@@ -664,29 +669,10 @@ public class Connect implements Constants {
        return;
 
        System.out.println( SUCCESS );
-       System.out.println( DIVIDER + "Updating idf to terms when 0" + DIVIDER );
-
-       String sqlQuery = "CREATE TEMPORARY TABLE IF NOT EXISTS `temp` (" +
-       "`term` varchar(32) NOT NULL, " +
-       "`idf` double(20,15) unsigned DEFAULT NULL, " +
-       "PRIMARY KEY (`term`) " +
-       ") ENGINE=InnoDB DEFAULT CHARSET=utf8;";
-       PreparedStatement statement = connection.prepareStatement( sqlQuery );
-       statement.execute();
-
-       sqlQuery = "insert into `temp`(`term`, `idf`) " +
-       "select `terms`.`term`, " +
-       "log10( (select count(`text`) from `documents`) / `terms`.`df`) " +
-       "from `terms` " +
-       "where `terms`.`df` > 0 " +
-       "and `terms`.`idf` = 0;";
-       statement = connection.prepareStatement( sqlQuery );
-       statement.execute();
+       System.out.println( DIVIDER + "Reseting idf1 to default values" + DIVIDER );
        
-       sqlQuery = "update `terms` " +
-         "inner join `temp` " +
-         "set `terms`.`idf` = `temp`.`idf`";
-       statement = connection.prepareStatement( sqlQuery );
+       final String sqlQuery = "update `terms` set `idf1` = `idf`;";
+       final PreparedStatement statement = connection.prepareStatement( sqlQuery );
        statement.execute();
 
        connection.close();

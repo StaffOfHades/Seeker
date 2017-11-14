@@ -89,7 +89,6 @@ public class Load extends Connect {
       FileReader input;
       LineNumberReader reader;
       List<String> list;
-      String s;
       try {
 
          // Open connection,
@@ -135,7 +134,6 @@ public class Load extends Connect {
       Connection connection;
       List<String> list;
       String string;
-      int j;
 
       try {
 
@@ -415,7 +413,6 @@ public class Load extends Connect {
       Connection connection;
       List<String> list;
       String string;
-      int j;
 
       try {
          

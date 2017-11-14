@@ -6,8 +6,9 @@ import javax.swing.JCheckBoxMenuItem;
 
 class JSelectorMenuItem extends JCheckBoxMenuItem {
 
-   public JSelectorMenuItem() {
-   }
+   static final long serialVersionUID = 73L;
+
+   public JSelectorMenuItem() { }
 
    public JSelectorMenuItem(String text) {
        super(text);
