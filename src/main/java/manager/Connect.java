@@ -63,7 +63,8 @@ public class Connect implements Constants  {
    // Retrieve all default queries
    public String[] getQueries() {
     
-      final int default_queries = 2;
+      //final int default_queries = 2;
+      final int default_queries = 111;
       final String[] queries = new String[default_queries + 1];
       int i = 0;
       queries[i++] = DIVIDER + "Seleccionar" + DIVIDER;
@@ -82,9 +83,11 @@ public class Connect implements Constants  {
          System.out.println( DIVIDER + "Retrieving all queries" + DIVIDER );
 
          // SQL Query to find text for given idquery.
-         final String sqlQuery = "select `text` from `queries` where `id` <= ?;";
+         //final String sqlQuery = "select `text` from `queries` where `id` <= ?;";
+         final String sqlQuery = "select `text` from `queries` where `id` >= ? and `id` <= ?;";
          final PreparedStatement statement = connection.prepareStatement( sqlQuery );
          statement.setInt( 1, default_queries );
+         statement.setInt( 1, default_queries + 2 );
 
          // Execute query & parse result.
          final ResultSet result = statement.executeQuery();
