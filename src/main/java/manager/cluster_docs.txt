@@ -1,0 +1,150 @@
+1
+binary circuits count backwards or forwards  a transistorized module
+is described that can be used to build logical circuits  a complete
+reversible counter measures
+   /
+2
+on the characteristic intervals of pulsations of diminishing periods
+in the electromagnetic field of the earth and their connection with
+phenomena in the upper atmosphere  investigation by highspeed recording
+of the daily variation of the earths em field has shown that during
+strong magnetic storms characteristic intervals of pulsation occur
+the decreasing period of these pulsations can be directly correlated
+with the sharp atmospheric disturbances and the development of aurora in
+lower latitudes  records obtained during two severe magnetic storms
+in are discussed
+   /
+3
+measurement of the rapid fluctuations of the earths magnetic field
+a ferroxcube probe in circuit with a photoelectric fluxmeter of sauzade
+may be used to observe fluctuations at frequencies up to cs
+   /
+4
+tides in the f ionospheric layer  a brief report of the results of
+a harmonic analysis of the mean diurnal variation of the layer semithickness
+during the period at leopoldvillebinza belgian congo
+   /
+5
+geomagnetic oscillations at middle latitudes parts one and two  observations
+of geomagnetic fluctuations in the frequency range cs are discussed
+based on measurements at tucson arizona  the results favour the
+hypothesis of intralayer hydromagnetic resonance in the ionosphere
+as the source mechanism
+   /
+6
+DISCUSSES THE BLACK COMMUNITY IN BALTIMORE, MARYLAND, AND THE DEMOCRATIC
+LIBRARY SERVICES PROVIDED BY THE ENOCH PRATT FREE LIBRARY FROM ITS FOUNDING TO
+THE BEGINNING OF WORLD WAR I.
+   /
+7
+CANADA IS ESSENTIALLY A NATION OF IMMIGRANTS WHO MAINTAIN THEIR CULTURAL
+IDENTITY. SINCE 1975 THE NATIONAL LIBRARY HAS PROVIDED SPECIAL LOAN MATERIAL
+FOR PUBLIC LIBRARIES IN LANGUAGES OTHER THAN FRENCH AND ENGLISH. DESCRIBES THE
+DEVELOPMENT OF THIS SERVICE, FROM INITIAL DECISIONS ABOUT LANGUAGE AND
+DOCUMENT PRIORITIES, TO PROCEDURES FOR DEALING WITH PROBLEMS OF SELECTION AND
+ACQUISITION, CATALOGUING AND CLASSIFICATION, AND DISTRIBUTION. THE
+ORGANISATION OF THE DISTRIBUTION NETWORK IS OUTLINED, AND PLANS TO EXPAND
+COLLECTIONS TO INCLUDE NON-BOOK MATERIALS DETAILED. OTHER ACTIVITIES INCLUDE A
+LIST OF CANADIAN PERIODICALS IN MINORITY LANGUAGES, AND BIBLIOGRAPHICAL
+SERVICES.
+   /
+8
+DESCRIBES THE DEVELOPMENT AND DISTRIBUTION PATTERN OF INDUSTRY IN UGANDA, AND
+OUTLINES THE WORK OF THE FOLLOWING AGENCIES WHICH PROVIDE INFORMATION SERVICES
+FOR INDUSTRY: UGANDA DEVELOPMENT CORPORATION; UGANDA TECHNICAL INFORMATION
+SERVICE; THE BANKS; COOPERATIVE SOCIETIES AND MARKETING BOARDS; UGANDA
+ADVISORY BOARD OF TRADE. HIGHLIGHTS THE NEED FOR A CENTRAL BODY RESPONSIBLE
+FOR COORDINATING THE EFFORTS OF THESE ORGANISATIONS TO ENSURE THAT A FLOW OF
+INDUSTRIAL INFORMATION IS MADE AVAILABLE TO ALL INTERESTED IN INDUSTRIAL
+ACTIVITIES IN THE COUNTRY. DISCUSSES THE REQUIREMENTS OF A NATIONAL INDUSTRIAL
+INFORMATION SERVICE, AND SUGGESTS THE ESTABLISHMENT, UNDER THE AEGIS OF THE
+PUBLIC LIBRARY SERVICE, OF A UGANDA NATIONAL INDUSTRIAL LIBRARY INFORMATION
+AND ADVISORY SERVICE (UNILIAS).
+   /
+9
+DISCUSSES THOSE INFORMATION RETRIEVAL SYSTEM EVALUATION PROBLEMS WHICH ARE
+CONNECTED WITH SYSTEMS CONTROL; PROPOSES AN APPROACH TO THEIR SOLUTION;
+FORMULATES THE MAIN PRINCIPLES OF THE APPROACH; AND PRESENTS A METHOD OF
+ISOLATING EVALUATION PROBLEM CLASSES WITH SIMILAR SOLUTION MODELS.
+   /
+10
+ALTHOUGH FULL BIBLIOGRAPHIC ACCESS TO NON-PRINT MATERIALS HAS BEEN A GOAL OF
+LIBRARIES, COMPLETE SUCCESS HAS NOT BEEN ACHIEVED. THE LIBRARY AT CALIFORNIA
+STATE UNIVERSITY, LOS ANGELES, SOUGHT A WAY TO ACCESS PREVIOUSLY INACCESSIBLE
+ELEMENTS OF ITS RECORDINGS COLLECTION. THE COMPUTER-BASED MEDIA INDEX WAS
+DESIGNED WITH SEPARATE INDEXES FOR TITLES, SUBJECTS, AND ADDED ENTRIES
+(SELECTIONS, COMPOSERS, PERFORMERS, ETC.). THIS HAS PROVED TO BE AN EXTREMELY
+USEFUL TOOL AND IS READILY ADAPTABLE TO OTHER FORMS OF MEDIATED MATERIAL.
+   /
+11
+experimental investigation of the aerodynamics of a
+wing in a slipstream.
+an experimental study of a wing in a propeller slipstream was
+made in order to determine the spanwise distribution of the lift
+increase due to slipstream at different angles of attack of the wing
+and at different free stream to slipstream velocity ratios .  the
+results were intended in part as an evaluation basis for different
+theoretical treatments of this problem .
+the comparative span loading curves, together with
+supporting evidence, showed that a substantial part of the lift increment
+produced by the slipstream was due to a destalling or
+boundary-layer-control effect . the integrated remaining lift
+increment, after subtracting this destalling lift, was found to agree
+well with a potential flow theory .
+an empirical evaluation of the destalling effects was made for
+the specific configuration of the experiment.
+   /
+12
+on two-dimensional panel flutter .
+theory and experiments of the flutter of a buckled plate are
+discussed. it is shown that an increase in the initial deviation
+from flatness or a static pressure differential across the plate
+raises the critical value of the reduced velocity .
+the applicability of the galerkin method to the linearized
+problem of flutter of an unbuckled plate has been questioned by
+several authors . in this paper the flutter condition was
+formulated in the form of an integral equation and solved numerically
+by the method of iteration and the method of matrix
+approximations, thus avoiding the constraint of assumed modes . for a
+plate (with finite bending rigidity) the results confirm those
+given by the galerkin method .
+an approximate analysis of the limiting form and amplitude of
+the flutter motion for a buckled plate is presented.
+   /
+13
+transformation of the compressible turbulent boundary
+layer .
+the transformation of the compressible turbulent boundary
+layer equations to their incompressible equivalent is
+demonstrated analytically .  the transformation is essentially the same
+as that for the laminar layer, first given by stewartson, except
+that the explicit relation between the viscosity and temperature
+is not required . a key point in the analysis is the modification
+of the stream function to include a mean of the fluctuating
+components and the postulate that the apparent turbulent shear,
+associated with an elemental mass, remains invariant in the
+transformation .
+the values of the incompressible friction coefficients and of
+pressure rise causing separation thus transformed show good
+agreement with the experimentally measured and independently
+reported results . an application of the transformation to the
+self-preserving boundary layers and to the computations of
+general boundary-layer flow is shown.
+   /
+14
+an investigation of the pressure distribution on conical bodies in
+hypersonic flows.
+a large amount of work on conical flow fields without axial symmetry
+at supersonic speed is presently available . however, no apparent
+hypersonic approximation has yet been derived. in this note,
+experimental data on two elliptical cones at m = 6 are presented and a
+hypersonic approach obtained from physical considerations is suggested .
+   /
+15
+on heat transfer in slip flow .
+a number of authors have considered the effect of slip on the heat
+transfer and skin friction in a laminar boundary layer over a flat plate .
+reference 1 considers this by a perturbation on the usual laminar
+boundary-layer analysis while some other studies.dash e.g., reference
+the impulsive motion of an infinite plate .
+   /

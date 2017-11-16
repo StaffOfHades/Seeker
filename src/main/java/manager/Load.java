@@ -25,6 +25,10 @@ public class Load extends Connect {
       PATH + "loader/term-vocab.txt";
    private final static String DOCUMENTSTXT =
       PATH + "loader/doc-text.txt";
+   private final static String DOCUMENTS_CLUSTER_TXT =
+      PATH + "manager/cluster_docs.txt";
+   private final static String DOCUMENTS_WEB_TXT =
+      PATH + "manager/docs-web.txt";
    private final static String QUERIESTXT =
       PATH + "loader/query-text.txt";
    private final static String CONTAINSTXT =
@@ -53,7 +57,7 @@ public class Load extends Connect {
 
       try {
          // Open connection,
-         Connection connection = DriverManager.getConnection( DB );
+         Connection connection = DriverManager.getConnection( DB , USER , PASSWORD );
 
          // Check if succesful.
          if( connection == null )
@@ -82,6 +86,8 @@ public class Load extends Connect {
    }
 
    public void loadDocuments(boolean addTerms) {
+       
+       
       
       File file;
       FileReader input;
@@ -94,7 +100,7 @@ public class Load extends Connect {
       try {
 
          // Open connection,
-         connection = DriverManager.getConnection( DB );
+         connection = DriverManager.getConnection( DB , USER , PASSWORD );
 
          // Check if succesful.
          if( connection == null )
@@ -103,21 +109,35 @@ public class Load extends Connect {
          System.out.println( SUCCESS );
          System.out.println( DIVIDER + "Adding Documents to DB" + DIVIDER );
 
-         file = new File( DOCUMENTSTXT );
+         file = new File( DOCUMENTS_WEB_TXT );
          input = new FileReader( file );
          reader = new LineNumberReader( input );
          list = reader.lines().collect(Collectors.toCollection(ArrayList::new));
 
+         int contador = 0;
+         
          for(int i = 0; i < list.size(); i++) {
 
          string = list.get(i);
          list.remove(i);
+         contador++;
          if(string.matches("^-?\\d+$")) {
 
-            string += ":";
-            while(!string.contains("/")) {
+            string += "#div";
+            
 
-               string += " " + list.get(i);
+            while(!string.contains("   /") ) {
+
+                if(list.get(i).contains("UURRLL->"))
+                {
+                     string += "#div" + list.get(i);
+                }
+                else
+                {
+                    string += " " + list.get(i);
+                }
+
+               
                list.remove(i);
             }
             string = string.substring(0, string.length() - 1).trim();
@@ -126,14 +146,21 @@ public class Load extends Connect {
             i++;
          }
          for(String line: list) {
-
-         final String[] split = line.split(":");
+         System.out.println(line);
+         final String[] split = line.split("#div");
          final int id = Integer.parseInt( split[0].trim() );
+         System.out.println(id);
          split[1] = split[1].trim();
+         
+         split[2] = split[2].trim();
+         split[2] = split[2].replace("UURRLL->", "");
+         
+         System.out.println(split[1]);
+         System.out.println(split[2]);
 
          System.out.println(id);
 
-         final String sqlQuery = "insert into `documents` (`id`, `text`) values(?, ?);";
+         final String sqlQuery = "insert into `documents_cluster` (`id`, `text`, `url`) values(?, ?,?);";
          try {
 
             final PreparedStatement statement = connection.prepareStatement( sqlQuery );
@@ -144,6 +171,11 @@ public class Load extends Connect {
             statement.setString(
                2,
                split[1]
+            );
+            
+            statement.setString(
+               3,
+               split[2]
             );
             statement.execute();
             statement.close();
@@ -181,7 +213,7 @@ public class Load extends Connect {
       try {
          
          // Open connection,
-         connection = DriverManager.getConnection( DB );
+         connection = DriverManager.getConnection( DB , USER , PASSWORD );
 
          // Check if succesful.
          if( connection == null )
@@ -263,7 +295,7 @@ public class Load extends Connect {
             if( count > 1 )
                System.out.println("'" + word + "' has tf " + count  + " in doc " + id );
 
-            String sqlQuery = "insert ignore into `terms` (`term`) values(?);";
+            String sqlQuery = "insert ignore into `terms_cluster` (`term`) values(?);";
             PreparedStatement statement = connection.prepareStatement( sqlQuery );
             statement.setString(
                1,
@@ -272,7 +304,7 @@ public class Load extends Connect {
             statement.execute();
 
             if( isDocument )
-               sqlQuery = "insert into `contains` (`iddoc`, `term`, `tf`) values (?, ?, ?);";
+               sqlQuery = "insert into `contains_cluster` (`iddoc`, `term`, `tf`) values (?, ?, ?);";
             else
                sqlQuery = "insert into `made` (`idquery`, `term`, `tf`, `tf1`) values (?, ?, ?, ?);";
 
@@ -315,7 +347,7 @@ public class Load extends Connect {
       try {
          
          // Open connection,
-         connection = DriverManager.getConnection( DB );
+         connection = DriverManager.getConnection( DB , USER , PASSWORD );
 
          // Check if succesful.
          if( connection == null )
@@ -374,7 +406,7 @@ public class Load extends Connect {
       try {
          
          // Open connection,
-         connection = DriverManager.getConnection( DB );
+         connection = DriverManager.getConnection( DB , USER , PASSWORD );
 
          // Check if succesful.
          if( connection == null )
@@ -450,7 +482,7 @@ public class Load extends Connect {
       try {
          
          // Open connection,
-         connection = DriverManager.getConnection( DB );
+         connection = DriverManager.getConnection( DB , USER , PASSWORD );
 
          // Check if succesful.
          if( connection == null )
@@ -523,7 +555,7 @@ public class Load extends Connect {
       try {
       
          // Open connection,
-         connection = DriverManager.getConnection( DB );
+         connection = DriverManager.getConnection( DB , USER , PASSWORD );
 
          // Check if succesful.
          if( connection == null )
@@ -532,9 +564,9 @@ public class Load extends Connect {
          System.out.println( "SUCCESS: Connected to DB" );
          System.out.println( "Adding df to terms" );
 
-         final String sqlQuery = "update `terms` set `df` = (" +
-         "select count(`tf`) as `df` from `contains` " +
-         "where `terms`.`term` = `term` " +
+         final String sqlQuery = "update `terms_cluster` set `df` = (" +
+         "select count(`tf`) as `df` from `contains_cluster` " +
+         "where `terms_cluster`.`term` = `term` " +
          "group by `term`);";
          final PreparedStatement statement = connection.prepareStatement( sqlQuery );
          statement.execute();
@@ -552,7 +584,7 @@ public class Load extends Connect {
       try {
       
          // Open connection,
-         connection = DriverManager.getConnection( DB );
+         connection = DriverManager.getConnection( DB , USER , PASSWORD );
 
          // Check if succesful.
          if( connection == null )
@@ -562,7 +594,7 @@ public class Load extends Connect {
          System.out.println( DIVIDER + "Adding idf to terms" + DIVIDER );
 
          String sqlQuery = "CREATE TEMPORARY TABLE IF NOT EXISTS `temp` (" +
-         "`term` varchar(32) NOT NULL, " +
+         "`term` varchar(500) NOT NULL, " +
          "`idf` double(20,15) unsigned DEFAULT NULL, " +
          "PRIMARY KEY (`term`) " +
          ") ENGINE=InnoDB DEFAULT CHARSET=utf8;";
@@ -570,15 +602,15 @@ public class Load extends Connect {
          statement.execute();
 
          sqlQuery = "insert into `temp`(`term`, `idf`) " +
-         "select `terms`.`term`, " +
-         "log10( (select count(`text`) from `documents`) / `terms`.`df`) " +
-         "from `terms` " +
-         "where `terms`.`df` > 0;";
+         "select `terms_cluster`.`term`, " +
+         "log10( (select count(`text`) from `documents_cluster`) / `terms_cluster`.`df`) " +
+         "from `terms_cluster` " +
+         "where `terms_cluster`.`df` > 0;";
          statement = connection.prepareStatement( sqlQuery );
          statement.execute();
 
-         sqlQuery = "update `terms` set `idf` = (" +
-         "select `idf` from `temp` where `terms`.`term` = `term`" +
+         sqlQuery = "update `terms_cluster` set `idf` = (" +
+         "select `idf` from `temp` where `terms_cluster`.`term` = `term`" +
          ");";
          statement = connection.prepareStatement( sqlQuery );
          statement.execute();

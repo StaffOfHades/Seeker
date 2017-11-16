@@ -1,11 +1,15 @@
 package seeker;
 
+//Liberías
+//
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.LinkedList;
 import java.util.List;
-
+//
+import java.awt.Dimension;
+//
 import javax.swing.GroupLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
@@ -18,7 +22,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
+import javax.swing.JTextPane;
 import javax.swing.JTextField;
 import javax.swing.LayoutStyle;
 import javax.swing.MenuElement;
@@ -26,17 +30,25 @@ import javax.swing.ScrollPaneConstants;
 import javax.swing.WindowConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-
+//
 import manager.Connect;
 import manager.Constants;
+//
+import java.awt.Desktop;
+import java.awt.HeadlessException;
+import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
+import javax.swing.event.HyperlinkEvent;
+import javax.swing.event.HyperlinkListener;
+import javax.swing.text.DefaultCaret;
 
 public abstract class AbstractView extends JFrame implements Constants {
 
    // Constants
    private final static String TYPEFACE = "Tahoma";
-   private final static int TEXT_TITLE = 36;
-   private final static int TEXT_HEADER = 18;
-   private final static int TEXT_BODY = 14;
+   private final static int TEXT_TITLE = 50;
+   private final static int TEXT_HEADER = 15;
+   private final static int TEXT_BODY = 40;
    static final long serialVersionUID = 25L;
 
    // View Variables
@@ -44,7 +56,7 @@ public abstract class AbstractView extends JFrame implements Constants {
    protected JCheckBoxMenuItem toggleSearch;
    protected JComboBox<String> querySelector;
    protected JMenu compare;
-   protected JTextArea resultArea;
+   public JTextPane resultArea;
    protected JTextField queryField;
 
    private JMenu history;
@@ -109,7 +121,7 @@ public abstract class AbstractView extends JFrame implements Constants {
       noHistory = new JMenuItem( "No Search History" );
       resetCompare = new JMenuItem( "Reset" );
       final JMenuItem[] items = {toggleSearch, exportR, graphF, graphRP, relevant};
-      resultArea = new JTextArea();
+      resultArea = new JTextPane();
       queryField = new JTextField();
 
       final JScrollPane scroll = new JScrollPane( resultArea );
@@ -167,10 +179,17 @@ public abstract class AbstractView extends JFrame implements Constants {
          0,
          TEXT_BODY
       );
+      
+      final Font body_result_area = new Font(
+         TYPEFACE,
+         0,
+         13
+      );
 
       noHistory.setEnabled( false );
       toggleSearch.setEnabled( false );
       clearHistory.setEnabled( false );
+      history.setEnabled( false );
 
       menuBar.add( file );
       menuBar.add( edit );
@@ -192,6 +211,8 @@ public abstract class AbstractView extends JFrame implements Constants {
       this.setJMenuBar( menuBar );
       
       scroll.setVerticalScrollBarPolicy( ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS );
+      final DefaultCaret caret = (DefaultCaret) resultArea.getCaret();
+      caret.setUpdatePolicy( DefaultCaret.NEVER_UPDATE );
 
       setDefaultCloseOperation( WindowConstants.EXIT_ON_CLOSE );
       setTitle( TITLE );
@@ -206,11 +227,11 @@ public abstract class AbstractView extends JFrame implements Constants {
       resetCompare.addActionListener( listener );
 
       titleLabel.setFont( title );
-      titleLabel.setText( "Buscador v.2" );
+      titleLabel.setText( "Buscador v0.8" );
 
       queryField.setFont( header );
 
-      searchTerm.setFont( body );
+      searchTerm.setFont( body_result_area );
       searchTerm.setText( "Buscar" );
       searchTerm.addActionListener(
          new ActionListener() {
@@ -227,8 +248,24 @@ public abstract class AbstractView extends JFrame implements Constants {
          }
       );
 
-      resultArea.setEditable(false);
-      resultArea.setFont( body ); // NOI18N
+
+    resultArea.setEditable(false);
+    resultArea.setFont( body_result_area ); // NOI18N
+    resultArea.setContentType("text/html");
+    resultArea.addHyperlinkListener(new HyperlinkListener() {
+        @Override
+        public void hyperlinkUpdate(HyperlinkEvent e) {
+            if (HyperlinkEvent.EventType.ACTIVATED.equals(e.getEventType())) {
+                System.out.println(e.getURL());
+                Desktop desktop = Desktop.getDesktop();
+                try {
+                    desktop.browse(e.getURL().toURI());
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        }
+    });
 
       resultLabel.setFont( body ); // NOI18N
       resultLabel.setText( "Documentos Relevantes" );
@@ -275,68 +312,73 @@ public abstract class AbstractView extends JFrame implements Constants {
       );
       
       getContentPane().setLayout(layout);
-      layout.setHorizontalGroup(
-         layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+      //Eje horizontal
+    layout.setHorizontalGroup(
+        layout.createParallelGroup(GroupLayout.Alignment.TRAILING)
+        //Ventana
+        .addGroup(
+            layout.createSequentialGroup()
+            .addGap(60, 60, 60)
             .addGroup(
-               GroupLayout.Alignment.TRAILING,
-               layout.createSequentialGroup()
-                  .addGap(20, 20, 20)
-                  .addGroup(
-                     layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                        .addGroup(
-                           GroupLayout.Alignment.TRAILING,
-                           layout.createSequentialGroup()
-                              .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 81, GroupLayout.PREFERRED_SIZE)
-                              .addComponent(titleLabel)
-                              .addGap(72, 72, 72)
-                        ).addComponent(querySelector, GroupLayout.PREFERRED_SIZE, 359, GroupLayout.PREFERRED_SIZE)
-                        .addComponent(queryField, GroupLayout.PREFERRED_SIZE, 359, GroupLayout.PREFERRED_SIZE)
-                        .addGroup(
-                           layout.createSequentialGroup()
-                              .addGap(145, 145, 145)
-                              .addComponent(searchTerm)
-                        )
-                  ).addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 16, Short.MAX_VALUE)
-                  .addGroup(
-                     layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                        .addComponent(resultLabel, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-                        .addComponent(scroll, GroupLayout.PREFERRED_SIZE, 141, GroupLayout.PREFERRED_SIZE)
-                  ).addGap(70, 70, 70)
-            )
-      );
-      layout.setVerticalGroup(
-         layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                layout.createParallelGroup()
+                    //Titulo
+                    .addGroup(
+                        layout.createSequentialGroup()
+                            .addGap(225, 225, 225)
+                            .addComponent(titleLabel)
+                    ).addGap(225, 225, 225)
+                    //Query Selector
+                    .addGroup(
+                        layout.createSequentialGroup()
+                        .addComponent(querySelector, GroupLayout.PREFERRED_SIZE, 720, GroupLayout.PREFERRED_SIZE)
+                    ).addGap(60, 60, 60)
+                    //Campo y botón
+                    .addGroup(
+                        layout.createSequentialGroup()
+                            .addComponent(queryField, GroupLayout.PREFERRED_SIZE, 720, GroupLayout.PREFERRED_SIZE)
+                            .addComponent(searchTerm, GroupLayout.PREFERRED_SIZE, 80, GroupLayout.PREFERRED_SIZE)
+                    )
+                    //Cuadro de resultados
+                    .addComponent(scroll, GroupLayout.PREFERRED_SIZE, 800, GroupLayout.PREFERRED_SIZE)
+            ).addGap(60, 60, 60)       
+        )
+    );
+    //Eje vertical
+    layout.setVerticalGroup(
+        layout.createParallelGroup(GroupLayout.Alignment.TRAILING)
+        //Ventana
+        .addGroup(
+            layout.createSequentialGroup()
+            .addGap(40, 40, 40)
             .addGroup(
-               layout.createSequentialGroup()
-                  .addGap(30, 30, 30)
-                  .addGroup(
-                     layout.createParallelGroup(GroupLayout.Alignment.TRAILING)
-                        .addGroup(
-                           layout.createSequentialGroup()
-                              .addComponent(titleLabel)
-                              .addGap(38, 38, 38)
-                              .addComponent(querySelector, GroupLayout.PREFERRED_SIZE, 31, GroupLayout.PREFERRED_SIZE)
-                              .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
-                              .addComponent(queryField, GroupLayout.PREFERRED_SIZE, 31, GroupLayout.PREFERRED_SIZE)
-                              .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
-                              .addComponent(searchTerm)
-                              .addGap(25, 25, 25)
-                        ).addGroup(
-                           layout.createSequentialGroup()
-                              .addComponent(resultLabel, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-                              .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                              .addComponent(scroll, GroupLayout.PREFERRED_SIZE, 186, GroupLayout.PREFERRED_SIZE)
-                        )
-                  ).addContainerGap(29, Short.MAX_VALUE)
-            )
-      );
+                layout.createSequentialGroup()
+                    //Titulo
+                    .addGroup(
+                    layout.createSequentialGroup()
+                        .addComponent(titleLabel)
+                    ).addGap(40, 40, 40)
+                    //Campo y botón
+                    .addGroup(
+                        layout.createSequentialGroup()
+                            .addComponent(querySelector, GroupLayout.PREFERRED_SIZE, 30, GroupLayout.PREFERRED_SIZE)
+                        ).addGap(10, 10, 10)
+                    .addGroup(
+                    layout.createParallelGroup()
+                        .addComponent(queryField, GroupLayout.PREFERRED_SIZE, 30, GroupLayout.PREFERRED_SIZE)
+                        .addComponent(searchTerm, GroupLayout.PREFERRED_SIZE, 30, GroupLayout.PREFERRED_SIZE)
+                    ).addGap(20, 20, 20)
+                    //Cuadro de resultados
+                    .addComponent(scroll, 400, 400, 400)
+            ).addGap(40, 40, 40)       
+        )
+    );
       
       titleLabel.getAccessibleContext().setAccessibleName("titleLabel");
 
       pack();
    }
 
-   private double selectGrapheme() {
+  private double selectGrapheme() {
 
       double grapheme = 0;
       while( grapheme <= 0 ) {
@@ -367,7 +409,6 @@ public abstract class AbstractView extends JFrame implements Constants {
    private void disableMenu( final JMenuItem[] items ) {
 
       querySelector.setSelectedIndex( 0 );
-      toggleSearch.setSelected( false );
       setMenuEnabled( items, false );
    }
 
@@ -392,10 +433,12 @@ public abstract class AbstractView extends JFrame implements Constants {
    }
    
    protected void updateHistory() {
-
+    
       for( MenuElement element : history.getSubElements() )
-         if( element instanceof JMenuItem )
-            ( (JMenuItem) element).removeActionListener( listener );
+         if( element instanceof JPopupMenu)
+            for( MenuElement item : element.getSubElements() )
+               if( item instanceof JMenuItem )
+                  ( (JMenuItem) item).removeActionListener( listener );
 
       clearHistory.addActionListener( listener );
       history.removeAll();
@@ -405,7 +448,8 @@ public abstract class AbstractView extends JFrame implements Constants {
       if( similarsHistory.size() > 0 ) {
 
          clearHistory.setEnabled( true );
-         for(int i = 0; i < idHistory.size() && i < feedbackHistory.size(); i++ ) {
+         compare.setEnabled( true );
+         for(int i = 0; i < idHistory.size(); i++ ) {
             
             final String text = idHistory.get( i );
             final JMenuItem item = new JMenuItem( text );
@@ -419,6 +463,7 @@ public abstract class AbstractView extends JFrame implements Constants {
       } else {
          
          clearHistory.setEnabled( false );
+         compare.setEnabled( false );
          history.add( noHistory );
       }
       history.addSeparator();

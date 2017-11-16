@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.Serializable;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,6 +14,7 @@ import java.util.Map;
 import javax.swing.JOptionPane;
 import javax.swing.JPopupMenu;
 import javax.swing.MenuElement;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
 import org.jfree.ui.RefineryUtilities;
@@ -53,19 +55,50 @@ public class View extends AbstractView {
          throw new Exception( "An idquery was uncessfuly found or created" );
       
       // Get similarity for a given idquery
-      List<Similar> similars = connect.getSimilarity( idquery );
+      List<Similar> similars = connect.getSimilarity(idquery ); //original
+      //List<Similar> similars = connect.getSimilarityClusterQuery(idquery );   // con cluster
+       
+      //ARTURO 
+      //escribre the walking dead en el buscador
+      // Get relevant documents
+      List<Integer> relevants = connect.getRelevants( idquery );
+      
+      resultArea.setText( "" );
+
+      // Itera
+      String texto = "";
+      for( int i = 0; i < similars.size() && i < MAX_DOC; i++ ) {
+
+         final Similar similar = similars.get(i);
+         System.out.println(
+            "Documento #" +
+            similar.getId() +
+            ": " +
+            similar.getSimilarity()
+         );
+         
+         if( relevants.contains(similar.getId())){
+               texto = texto + "---RELEVANTE!--- <br>\n";
+           }
+         
+         texto += "#Doc: " + similar.getId() + " - " + similar.getText().substring(0, 140) 
+                           + "<br>\n" + "<br>\n" + makeLinksInText(similar.getURL()) + "<br>\n";
+         texto += "<br>\n";
+    
+      }
+      resultArea.setText( texto );  
+      
+      //ARTURO FIN
       if( toggleSearch.isSelected() )
             similars = connect.getSimilarityQ1( idquery, similars );
-
+            //getSimilarityQ1StopWords
       if( similars == null )
          throw new Exception( "An error occured when getting similarity list" );
       
+      System.out.println(similars.size());
       List<Double> precision = new ArrayList<>();
       List<Double> recall = new ArrayList<>();
-
-      // Get relevant documents
-      List<Integer> relevants = connect.getRelevants( idquery );
-
+      
       if( relevants == null )
          throw new Exception( "An error occured when getting relevants list" );
       
@@ -76,9 +109,10 @@ public class View extends AbstractView {
          int found = 0;
          final int correct = relevants.size();
          
+
          // Iterate over all relevant documents,
          for( Similar pair : similars ) {
-            
+
             found += relevants.contains( pair.getId() ) ? 1 : 0;
             final double p = (double) found / counter; 
             final double r = (double) found / correct;
@@ -88,6 +122,7 @@ public class View extends AbstractView {
             // Increment counter
             counter++;
          }
+         
          System.out.println(
             "\nDocuments retrieved: " +
             counter +
@@ -95,6 +130,7 @@ public class View extends AbstractView {
             found +
             " where relevant"
          );
+         
       }
       System.out.println( DIVIDER + "End" + DIVIDER + "\n" );
       if( similarsHistory.size() > 5)
@@ -124,7 +160,8 @@ public class View extends AbstractView {
       feedbackHistory.add( toggleSearch.isSelected() );
      
       updateHistory();
-      showResults();
+      
+      //showResults();
    }
 
    private void showResults() {
@@ -135,6 +172,8 @@ public class View extends AbstractView {
    protected void showResults( String id ) {
 
       currentIndex = idHistory.indexOf( id );
+      System.out.println("--------------------------------------");
+      System.out.println(currentIndex);
       if( currentIndex < 0 )
          return;
       final String[] ids = id.split( "\\s+" );
@@ -180,6 +219,7 @@ public class View extends AbstractView {
       text = text.substring(0, text.length() - 1 );
 
       resultArea.setText( text );
+      
 
       // Scroll back to top of text area
       resultArea.setCaretPosition( 0 );
@@ -679,35 +719,44 @@ public class View extends AbstractView {
          System.err.println( "Nothing to exported" );
    }
 
-   /**
-    * @param args the command line arguments
-    */
-   public static void main( String args[] ) {
-
-      try {
-
-         for( UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels() ) {
-            if( "Nimbus".equals( info.getName() ) ) {
-               UIManager.setLookAndFeel( info.getClassName() );
-               break;
-            }
-         }
-      } catch( Exception e ) {
-
-         e.printStackTrace();
-      }
-
-      /* Create and display the form */
-      EventQueue.invokeLater(
-
-         new Runnable() {
-
+   //Agregar un Link al texto encontrado
+   public String makeLinksInText(String text) {
+        text = "<a href=\"" + text + "\" target=\"_blank\" " + ">" + text + "</a>" ;
+        return text;
+    }
+   
+    //Menú
+    public static void main( String args[] ) {
+        //
+        SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
-               new View().setVisible(true);
+                new View().setVisible(true);
             }
-         }
-      );
+        });
+        
+        //
+        try {
+            for( UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels() ) {
+                if( "Nimbus".equals( info.getName() ) ) {
+                    UIManager.setLookAndFeel( info.getClassName() );
+                    break;
+                }
+            }
+        } 
+        catch( Exception e ) {
+            e.printStackTrace();
+        }
+
+        /* Create and display the form */
+        EventQueue.invokeLater(
+            new Runnable() {
+                @Override
+                public void run() {
+                   new View().setVisible(true);
+                }
+            }
+        );
    }
 }
 
