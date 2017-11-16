@@ -87,7 +87,7 @@ public class Connect implements Constants  {
          final String sqlQuery = "select `text` from `queries` where `id` >= ? and `id` <= ?;";
          final PreparedStatement statement = connection.prepareStatement( sqlQuery );
          statement.setInt( 1, default_queries );
-         statement.setInt( 1, default_queries + 2 );
+         statement.setInt( 2, default_queries + 2 );
 
          // Execute query & parse result.
          final ResultSet result = statement.executeQuery();
